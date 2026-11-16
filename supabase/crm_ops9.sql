@@ -18,3 +18,6 @@ drop policy if exists "founders read" on public.founder_tasks;
 create policy "founders read" on public.founder_tasks for select using (public.is_admin());
 drop policy if exists "founders tick" on public.founder_tasks;
 create policy "founders tick" on public.founder_tasks for update using (public.is_admin()) with check (public.is_admin());
+-- 11-16 22:3x: founders (and a Claude signed in as a founder) can add tasks too, not only the service role.
+drop policy if exists "founders add" on public.founder_tasks;
+create policy "founders add" on public.founder_tasks for insert with check (public.is_admin());
