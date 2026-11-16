@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -105,8 +105,9 @@ async function fetchAll() {
     all("interested_leads", "*", q => q.order("email")),   // 11-12: every lead Instantly marks Interested = hot
     all("client_notes", "lead_email,kind,note,noted_at,created_at").catch(() => []),   // 11-16: docs/clients/*.md notes (Paid clients + Hot leads pages)
     all("founder_tasks", "*", q => q.is("done_at", null).order("due_at", { ascending: true })).catch(() => []),   // 11-16: only what a founder must do (Do next)
+    all("retainers", "*").catch(() => []),   // 11-17: Stripe subscriptions = retainer clients (crm_sync.py)
   ]);
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers };
 }
 
 /* ---------------- derive ---------------- */
@@ -129,7 +130,7 @@ const MOODS = [["hot", "Hot", "c-red"], ["asked", "Asked price", "c-orange"], ["
 const MOOD_LABEL = Object.fromEntries(MOODS.map(m => [m[0], m[1]]).concat([["buyer", "Buyer"]]));
 const initials = p => { const s = (p.name || p.email || p.lead_email || "?").replace(/[^\p{L}\p{N} ]/gu, " ").trim().split(/\s+/); return ((s[0]?.[0] || "?") + (s[1]?.[0] || s[0]?.[1] || "")).toUpperCase(); };
 const campName = n => String(n || "").replace(/^TEST\s*[—-]\s*/i, "").replace(/\s*[—-]\s*(V\d.*|test.*)$/i, "").replace(/\s*\(\d\d-\d\d\)\s*$/, "").trim();
-const PACK = { short_5: "5 Shorts", short_3: "3 Shorts", short_1: "1 Short", short_5_150: "Starter, 5 Shorts", monthly_growth_300: "Growth, monthly", monthly_daily_500: "Daily, monthly", dfy_daily_600: "Done For You", dfy_max_growth_1000: "Max Growth" };
+const PACK = { monthly_30_300: "30 Shorts a month", short_5: "5 Shorts", short_3: "3 Shorts", short_1: "1 Short", short_5_150: "Starter, 5 Shorts", monthly_growth_300: "Growth, monthly", monthly_daily_500: "Daily, monthly", dfy_daily_600: "Done For You", dfy_max_growth_1000: "Max Growth" };
 const PER = { today: ["Today", 1], "7d": ["Last 7 days", 7], "30d": ["Last 30 days", 30], month: ["This month", 0] };
 const nameOf = e => { const p = RAW && RAW.pipeline.find(x => lc(x.email) === lc(e)); return p && p.name ? p.name : e; };
 const payKey = p => p.client_id ? "c:" + p.client_id : p.email ? "e:" + lc(p.email) : "p:" + p.id;
@@ -349,6 +350,12 @@ function derive() {
     c.firstPaid = first; c.toClose = first && outs.length ? outs.filter(t => t <= first).length || null : null; });
   { const L = d.paidC.filter(c => c.toClose).sort((x, y) => x.toClose - y.toClose), a = L.map(c => c.toClose);
     d.close = { list: L, n: a.length, med: med(a), avg: a.length ? sum(a, x => x) / a.length : null, min: a[0] ?? null, max: a.length ? a[a.length - 1] : null, in5: a.length ? a.filter(x => x <= 5).length / a.length * 100 : null }; }
+  /* 11-17 (Simas): retainer clients = Stripe subscriptions only (repeat pack buyers are not retainers) */
+  const mo = r => (+r.amount || 0) * (r.interval === "year" ? 1 / 12 : r.interval === "week" ? 52 / 12 : 1);
+  const retAll = (R.retainers || []).map(r => ({ ...r, live: /^(active|past_due|trialing)$/.test(r.status || ""), monthly: mo(r), e: lc(r.email || "") }));
+  d.ret = { all: retAll.sort((a, b) => (b.live - a.live) || String(b.started_at || "").localeCompare(String(a.started_at || ""))), live: retAll.filter(r => r.live) };
+  d.ret.mrr = sum(d.ret.live, r => r.monthly); d.ret.total = sum(retAll, r => +r.paid_total || 0); d.ret.ended = retAll.filter(r => !r.live).length;
+  d.paidC.forEach(c => { c.ret = d.ret.live.find(r => c.emails.has(r.e)) || null; });
   d.paidHot = d.paidC.filter(c => c.tier === "very hot").length; d.paidVal = d.paidC.filter(c => c.valuable || c.tier === "valuable").length;
   d.paidLate = d.paidC.filter(c => c.p.next_action_at && new Date(c.p.next_action_at) < new Date()).length; d.paidNoNext = d.paidC.filter(c => !c.p.next_action).length; d.paidProm = sum(d.paidC, c => c.prom.length);
 
@@ -449,7 +456,7 @@ const hotTile = ({ p, us, tag, lr }) => { const e = lc(p.email), pr = (D.notesBy
 const paidTile = c => { const p = c.p, inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(p.show || [...c.emails].join(", "), 90))}</small></span>`;
   const bought = p.paid ? esc(cut(p.paid, 200)) : c.pays[0] ? `${usd(c.pays[0].amount)} · ${esc(PACK[c.pays[0].package] || "custom payment")} · ${fDT(c.pays[0].paid_at)}` : "no payment on record";
   return pgRow("paid", [c.name, c.tier, c.valuable ? "valuable" : "", p.show, ...c.emails, c.owner, p.inbox, p.paid, p.next_action, c.owed, ...c.notes.map(n => n.note)].join(" "), `<div class="pt-top">${p.email ? leadBtn(p.email, inner, "row np0") : dB("client", c.key, inner, "row np0", "Open this client")}${dB("client", c.key, usd(c.total), `chip ${c.total ? "g" : ""}`, "Open payments, videos and the whole conversation")}</div>
-    <div class="pt-meta">${c.tier === "very hot" ? `<span class="chip r" title="${esc(c.why || "Paid in the last 7 days, or videos or a promise still owed")}">🔥 very hot</span>` : c.tier === "quiet" ? `<span class="chip" title="${esc(c.why || "No payment for 45+ days and nothing owed")}">💤 quiet</span>` : ""}${c.valuable || c.tier === "valuable" ? `<span class="chip g" title="${esc(c.why || "$300+ paid, a repeat buyer or a monthly plan")}">💎 future valuable</span>` : ""}${c.owner ? `<span class="chip">${esc(c.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${p.status ? `<span class="chip b">${esc(p.status)}</span>` : ""}${c.waiting ? `<span class="chip o" title="Paid 48 h+ ago and no delivery is indexed: check their Drive folder">deliveries not indexed</span>` : ""}${c.credits != null ? `<span class="chip g">${c.credits} portal credit${c.credits === 1 ? "" : "s"} left</span>` : ""}${cvChip(D.cn([...c.emails]))}</div>
+    <div class="pt-meta">${c.ret ? `<span class="chip g" title="Retainer: Stripe subscription, ${esc(c.ret.status)}">🔁 retainer ${usd(c.ret.amount)}/${esc(c.ret.interval === "month" ? "mo" : c.ret.interval || "")}</span>` : ""}${c.tier === "very hot" ? `<span class="chip r" title="${esc(c.why || "Paid in the last 7 days, or videos or a promise still owed")}">🔥 very hot</span>` : c.tier === "quiet" ? `<span class="chip" title="${esc(c.why || "No payment for 45+ days and nothing owed")}">💤 quiet</span>` : ""}${c.valuable || c.tier === "valuable" ? `<span class="chip g" title="${esc(c.why || "$300+ paid, a repeat buyer or a monthly plan")}">💎 future valuable</span>` : ""}${c.owner ? `<span class="chip">${esc(c.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${p.status ? `<span class="chip b">${esc(p.status)}</span>` : ""}${c.waiting ? `<span class="chip o" title="Paid 48 h+ ago and no delivery is indexed: check their Drive folder">deliveries not indexed</span>` : ""}${c.credits != null ? `<span class="chip g">${c.credits} portal credit${c.credits === 1 ? "" : "s"} left</span>` : ""}${cvChip(D.cn([...c.emails]))}</div>
     <div class="pt-lines"><span><b>Bought</b> ${bought}${c.n > 1 ? ` · ${c.n} payments, ${usd(c.total)} in total` : ""}</span>${c.plan ? `<span><b>Plan</b> ${esc(cut(c.plan.note, 220))} · ${nDay(c.plan)}</span>` : ""}${c.toClose ? `<span><b>Emails to close</b> ${c.toClose} sent before the first payment</span>` : ""}<span><b>Videos</b> ${c.vids ? `${c.vids} delivered${c.lastVid ? ` · last ${dLabel(c.lastVid.slice(0, 10))}` : ""}` : "none indexed yet"}</span>${c.why ? `<span><b>Priority</b> ${esc(cut(c.why, 160))}</span>` : ""}${c.owed ? `<span><b>Owed</b> ${esc(cut(c.owed, 220))}</span>` : ""}${p.email ? nextLine(p) : `<span><b>Next</b> not in the samples pipeline</span>`}${c.prom.map(x => `<span><b>Promise</b> ${esc(cut(x.promise, 200))} ${dueChip(x.due_at)}</span>`).join("")}${c.notes.filter(n => n !== c.plan && n.kind !== "priority").slice(0, 5).map(n => `<span><b>${KIND[n.kind] || esc(n.kind)}</b> ${esc(cut(n.note, 220))} · ${nDay(n)}</span>`).join("")}<span><b>Last email</b> ${c.lastEmail ? fDT(c.lastEmail) : "none synced"}</span></div>`); };
 
 /* Do next rows: a founder task gets a Done button (founders tick it); other rows open the lead or the list behind them */
@@ -484,6 +491,11 @@ const CARDS = [
 { id: "paidc", title: "Paid clients", focus: ["paid", ""], render: d => `${head("Paid clients", "", true)}${big("paid", "", `${N(d.paidC.length)}<small>paying clients</small>`, "Open every paying client: priority, videos, next steps, key info")}
     <div class="stack sp">${kv("🔥 Very hot now", N(d.paidHot), "paid", "")}${kv("💎 Future valuable", N(d.paidVal), "paid", "")}${kv("Videos delivered this month", N(d.vid.month), "vids", d.ym)}${kv("Next step overdue", `<span class="${d.paidLate ? "dn" : ""}">${N(d.paidLate)}</span>`, "paid", "")}${kv("Open promises", N(d.paidProm), "paid", "")}</div>
     <p class="sub">Very hot first, then future valuable: what they pay, videos delivered, what is owed and the next step.</p>` },
+{ id: "retainers", title: "Retainers", focus: ["retainers", ""], render: d => { const R0 = d.ret;   // 11-17 (Simas): recurring clients, only those who bought a retainer
+    return `${head("Retainer <em class=\"sf\">clients</em>", "", true)}${big("retainers", "", `${N(R0.live.length)}<small>on a retainer · ${usd(R0.mrr)}/month</small>`, "Open every retainer: amount, since when, next bill")}
+    <div class="stack sp">${R0.live.map(r => dB("retainers", "", `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(cut(r.name || r.email || "Client", 40))}</b><small>since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.cancel_at_period_end ? " · cancels at period end" : ""}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`, "tile row", "Open the retainers")).join("") || empty("No retainer yet. Monthly plans show here.")}</div>
+    ${kv("Paid on retainers so far", usd(R0.total), "retainers", "")}${R0.ended ? kv("Ended retainers", N(R0.ended), "retainers", "") : ""}
+    <p class="sub">Only clients on a monthly plan (Stripe subscription). Repeat pack buyers are not counted.</p>`; } },
 { id: "money", title: "Money", render: d => { const P = d.per;
     return `${head(`Money · ${P.label}`, `<button type="button" class="chip" data-act="pernext" title="Change the period: today, 7 days, 30 days, month">${P.chip}</button>`)}
     ${big("pays", "period", N(P.rev, "usd"), `Open the payments of ${P.label}`)}
@@ -634,7 +646,7 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "hot", "activity", "followups"], money: ["money", "close", "revchart", "buyers", "topc", "alltime", "moneypage"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["money", "close", "revchart", "buyers", "topc", "alltime", "moneypage"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
   outreach: ["outreach", "newleads", "total", "week", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
@@ -839,6 +851,7 @@ const DR = {
     return { title: `Today, ${dLong(D.t)}`, sub: `${D.todayItems.length} items`, html: stackOf(D.todayItems.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"], inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 90))}</b><small>${esc(cut(x.detail || x.kind, 160))}</small></span>${x.at ? `<span class="row-end"><small>${timeOf(x.at)}</small></span>` : ""}`; return x.lead_email ? leadBtn(x.lead_email, inner) : dB("item", x.id, inner, "tile row"); }), "Nothing on the list for today.") }; },
   next() { return { title: "Do next", sub: `${D.nextN} thing${D.nextN === 1 ? "" : "s"} only a founder can do, most urgent first`, html: stackOf(D.nextAll.map((x, i) => nextRow(x, i, true)), "Nothing needs you right now.") }; },
   close() { const C = D.close; return { title: "Emails to close", sub: `${C.n} paying client${C.n === 1 ? "" : "s"} · typical ${C.med ?? "—"} · average ${C.avg == null ? "—" : C.avg.toFixed(1)} · fewest first`, html: stackOf(C.list.map(c => { const inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(c.p.show || [...c.emails].join(", "), 80))} · first paid ${c.firstPaid ? fDT(c.firstPaid) : "—"}</small></span><span class="row-end">${c.toClose}<small>email${c.toClose === 1 ? "" : "s"}</small></span>`; return c.p.email ? leadBtn(c.p.email, inner) : dB("client", c.key, inner, "tile row"); }), "No paying client with an email trail yet.") }; },
+  retainers() { const R0 = D.ret; return { title: "Retainer clients", sub: `${R0.live.length} live · ${usd(R0.mrr)}/month · ${usd(R0.total)} paid so far${R0.ended ? ` · ${R0.ended} ended` : ""}`, html: stackOf(R0.all.map(r => { const inner = `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(r.name || r.email || "Client")}</b><small>${esc(r.status || "")} · since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end && r.live ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.canceled_at ? ` · ended ${dLabel(dayOf(r.canceled_at))}` : ""} · ${r.invoices_paid || 0} paid, ${usd(r.paid_total)}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`; return r.e ? dB("client", "e:" + r.e, inner, "tile row", "Open this client") : `<div class="tile row">${inner}</div>`; }), "No retainer yet.") }; },
   claudeq() { return { title: "Claude's queue", sub: `${D.claudeQ.length} item${D.claudeQ.length === 1 ? "" : "s"} Claude is handling · ${D.claudeSum || "none"} · nothing for you to do`, html: stackOf(D.claudeQ.map((x, i) => nextRow(x, i, true)), "Claude's queue is empty.") }; },
   speed(a) { let list = [...D.speed.gaps], title = "Speed to reply";
     if (a === "slow") { list.sort((x, y) => y.g - x.g); title = "Slowest replies"; } else if (a === "fast") { list = list.filter(x => x.g <= 60).sort((x, y) => y.t - x.t); title = "Answered within an hour"; } else if (a === "7") { list = list.filter(x => x.t >= Date.now() - 7 * 864e5).sort((x, y) => y.t - x.t); title = "Replies answered in the last 7 days"; }
@@ -1077,10 +1090,26 @@ function exportCsv() {
 
 /* ---------------- refresh loop + realtime ---------------- */
 function offline(on) { let el = $("#offline"); if (on && !el) { el = document.createElement("div"); el.id = "offline"; el.className = "offline"; el.setAttribute("role", "status"); el.textContent = "Offline, retrying…"; document.body.appendChild(el); } else if (!on && el) el.remove(); }
+/* 11-17 (Simas: "we had a payment but the confetti didn't come"): realtime alone missed it (page closed, or the channel
+   fell back to polling). Now every payment we haven't celebrated yet gets a toast + confetti: on a refresh, and on the
+   first load after a visit (last seen payment time kept in this browser). */
+const CELEB = new Set(), LASTPAY = "beju-crm-lastpay";
+function celebrateNew(prev) {
+  const pays = RAW.payments.filter(x => !x.refunded && x.paid_at), maxAt = pays.reduce((m, x) => x.paid_at > m ? x.paid_at : m, "");
+  const seen = store.get(LASTPAY);
+  const fresh = pays.filter(x => !CELEB.has(x.id) && (prev ? !prev.has(x.id) : (seen && x.paid_at > seen)));
+  fresh.forEach(x => CELEB.add(x.id));
+  if (!prev) pays.forEach(x => CELEB.add(x.id));
+  if (maxAt) store.set(LASTPAY, maxAt);
+  if (!fresh.length) return;
+  const tot = sum(fresh, x => +x.amount || 0), one = fresh[0];
+  toast(fresh.length === 1 ? `+${usd(one.amount)} from ${one.payer_name || one.email || "a client"}` : `+${usd(tot)} from ${fresh.length} payments`, "cash", "c-green", prev ? (PACK[one.package] || "New payment") : "since your last visit");
+  confetti();
+}
 async function refresh(manual) {
   const btns = $$('[data-act="refresh"]'); if (manual) btns.forEach(b => b.classList.add("spinning"));
-  const first = !RAW;
-  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); }
+  const first = !RAW, prevPay = RAW ? new Set(RAW.payments.map(x => x.id)) : null;
+  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); celebrateNew(prevPay); }
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
@@ -1097,7 +1126,7 @@ function startRealtime() {
 function stopRealtime() { clearTimeout(RT_T); if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
 function onChange(tb, p) {
   const n = p.new || {}, ins = p.eventType === "INSERT";
-  if (tb === "payments" && ins && !n.refunded) { toast(`+${usd(n.amount)} from ${n.payer_name || n.email || "a client"}`, "cash", "c-green", PACK[n.package] || "New payment"); confetti(); }
+  if (tb === "payments" && ins && !n.refunded && !CELEB.has(n.id)) { CELEB.add(n.id); toast(`+${usd(n.amount)} from ${n.payer_name || n.email || "a client"}`, "cash", "c-green", PACK[n.package] || "New payment"); confetti(); }
   else if (tb === "reply_queue" && ins && n.kind === "REAL") toast(`New reply from ${nameOf(n.lead_email)}`, "mail", "c-blue", cut(n.snippet, 90));
   else if (tb === "profiles" && ins && !n.is_admin) toast(`Portal sign-up: ${n.name || n.email || "new client"}`, "user", "c-purple", n.email || "");
   else if (tb === "sample_requests" && ins) toast("New free-sample request", "film", "c-purple", cut(n.video_url, 70));

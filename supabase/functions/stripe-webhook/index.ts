@@ -31,6 +31,15 @@ Deno.serve(async (req) => {
   if (typeof s.payment_intent === "string") {
     const pi = await stripe.paymentIntents.retrieve(s.payment_intent);
     if (typeof pi.latest_charge === "string") chargeId = pi.latest_charge;
+  } else if (typeof s.invoice === "string") {
+    // 11-16: subscription checkouts carry no payment_intent; the charge sits on the first invoice. Without this the
+    // payment was saved under the session id AND again under the charge id by crm_sync (Dr. Judy $300 counted twice).
+    const inv = await stripe.invoices.retrieve(s.invoice);
+    if (typeof inv.charge === "string") chargeId = inv.charge;
+    else if (typeof inv.payment_intent === "string") {
+      const pi = await stripe.paymentIntents.retrieve(inv.payment_intent);
+      if (typeof pi.latest_charge === "string") chargeId = pi.latest_charge;
+    }
   }
 
   // client: by email, else by name (people pay from a second address), else new
