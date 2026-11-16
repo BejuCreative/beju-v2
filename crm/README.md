@@ -86,6 +86,14 @@ The "💰 Money" card (bottom of the bento, phone tab Money) opens `money.html`:
 - `money.html?demo=1` renders `money-demo.json` (a copy of a real snapshot) without Supabase; `&look=forest` previews a look. The demo file is git-ignored: it holds real numbers and this repo is the public site, so never commit or deploy it.
 - Files: `money.html`, `money.js`, `money.css` (loaded after `crm.css`). Bump their `?v=` strings in `money.html` after a change.
 
+## Paid clients and Hot leads pages (2026-11-16)
+
+Both open in the drill-down sheet, with a search box (filters as you type) and the All / Simas / Benas switch.
+
+- **Paid clients** (card "Paid clients" at the end of the bento, phone tab Clients): everyone who paid (a payment, `pipeline.paid` or status WON/DONE, or a portal pack), newest payment first. Per client: owner, inbox, what they bought (`pipeline.paid`, else the latest payment), what is still owed (a sentence with "owed / owe / remaining…" in next action, `fu_note` or notes), the next step with its time (late = red), open promises, the latest five `client_notes` and the last email date. A payer email is matched to its pipeline lead when it is the same address, is named in `paid` / `notes`, or shares a company domain.
+- **Hot leads** (the Hot leads card's expand button or count): every hot lead. Hot = status HOT, said yes / asked price, Instantly "Interested", thinking or replied after the sample (not buyers), minus `fu_stage` parked / none and blocklisted replies. Order: waiting on us first, then next action. Per lead: stage, the offer (latest `client_notes` price note, else `fu_note`), their last words (newest inbound `threads` snippet or reply-queue snippet), last touch, next step, a "$ money" badge when an amount is involved.
+- `client_notes` is filled from `docs/clients/*.md` by `scripts/client_notes_sync.py` (Dashboard repo, hourly inside `crm_sync.py`) and by `client_notes.py add`. SQL: `supabase/crm_ops5.sql` + `crm_ops8.sql` (`noted_at`, `name`).
+
 ## Config (`config.js`)
 
 `supabaseUrl`, `supabaseAnonKey` (public by design; never put the service-role key or any secret here), `monthlyGoal` (10000), `timezone` (`Europe/Vilnius`).

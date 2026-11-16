@@ -77,7 +77,7 @@ function applyVars(root) {   // data-v="w:45%;k:2" -> CSS custom properties, one
 /* ---------------- state ---------------- */
 let sb = null, ME = null, RAW = null, D = null, TIMER = null, LAST_OK = 0, OPENER = null, CH = null, RT = "off", RT_T = null, NAV = [], SEQ = 0;
 const PLOT = {};   // interactive charts: id -> { n, i, paint(i), drill(i) }
-const STATE = { owner: "All", period: "month", range: 14, att: "", day: "", hotAll: false, todayAll: false, q: "", sel: 0, sa: true, sb: true, rg: true, rp: true, hotSort: "wait", campSort: "sent", drill: null };
+const STATE = { owner: "All", period: "month", range: 14, att: "", day: "", hotAll: false, todayAll: false, q: "", sel: 0, sa: true, sb: true, rg: true, rp: true, hotSort: "wait", campSort: "sent", drill: null, pq: {} };
 const must = async p => { const { data, error } = await p; if (error) throw error; return data; };
 async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per call
   const out = [];
@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -103,8 +103,9 @@ async function fetchAll() {
     all("lead_adds", "day,tab,n", q => q.gte("day", addDays(t, -21))),
     all("threads", "lead_email,at,direction", q => q.order("at").order("msg_id")),   // light copy of every message: counts per lead + speed to reply
     all("interested_leads", "*", q => q.order("email")),   // 11-12: every lead Instantly marks Interested = hot
+    all("client_notes", "lead_email,kind,note,noted_at,created_at").catch(() => []),   // 11-16: docs/clients/*.md notes (Paid clients + Hot leads pages)
   ]);
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes };
 }
 
 /* ---------------- derive ---------------- */
@@ -179,18 +180,21 @@ function derive() {
   const fuBy = Object.fromEntries(R.fu.map(f => [lc(f.email), f]));
   const intr = Object.fromEntries((R.interested || []).map(x => [lc(x.email), x])), pipeAll = Object.fromEntries(R.pipeline.map(p => [lc(p.email), p]));
   const hotP = p => (p.status || "").toUpperCase() === "HOT" || /^(said_yes|asked_price)$/.test(p.fu_stage || "");
-  const cand = pipe.filter(p => hotP(p) || (intr[lc(p.email)] && !isBuyer(p) && !/^LOST$/i.test(p.status || "")));
-  Object.values(intr).forEach(x => { if (pipeAll[lc(x.email)]) return;
+  /* 11-16 (Simas: "hot leads all of them"): also thinking and replied after their sample; parked / none and blocklisted leave the list */
+  const blk = new Set(R.replies.filter(r => r.blocklisted).map(r => lc(r.lead_email)));
+  const warmP = p => !isBuyer(p) && !/^LOST$/i.test(p.status || "") && !!(intr[lc(p.email)] || p.fu_stage === "thinking" || (p.delivered_at && p.last_reply_at && new Date(p.last_reply_at) > new Date(p.delivered_at)));
+  const cand = pipe.filter(p => (hotP(p) || warmP(p)) && !/^(parked|none)$/.test(p.fu_stage || "") && !blk.has(lc(p.email)));
+  Object.values(intr).forEach(x => { if (pipeAll[lc(x.email)] || blk.has(lc(x.email))) return;
     const p = { email: x.email, name: x.first_name || x.company || "", show: [x.company, x.campaign].filter(Boolean).join(" · "), owner: ownerOfInbox(x.inbox), inbox: x.inbox, status: "INTERESTED", last_reply_at: x.last_reply_at, interested: true };
     if (own(p)) cand.push(p); });
   d.hot = cand.map(p => {
     const e = lc(p.email), f = fuBy[e], x = intr[e], lrP = p.last_reply_at ? +new Date(p.last_reply_at) : 0, lrI = x && x.last_reply_at ? +new Date(x.last_reply_at) : 0;
     const lr = Math.max(lrP, lrI), lo = f && f.last_out ? +new Date(f.last_out) : 0;
     const us = waitUs.has(e) || (lr && lo && lr > lo);
-    const tag = p.fu_stage === "said_yes" ? ["said yes", "g"] : p.fu_stage === "asked_price" ? ["asked price", "o"] : isBuyer(p) ? ["hot client", "b"] : hotP(p) ? ["hot", "r"] : ["interested", "b"];
+    const tag = p.fu_stage === "said_yes" ? ["said yes", "g"] : p.fu_stage === "asked_price" ? ["asked price", "o"] : isBuyer(p) ? ["hot client", "b"] : hotP(p) ? ["hot", "r"] : p.fu_stage === "thinking" ? ["thinking", "b"] : x ? ["interested", "b"] : ["replied after sample", "b"];
     const days = lr ? (Date.now() - lr) / 864e5 : null;
-    return { p, us, tag, lr, days, hl: days == null ? 3 : days <= 2 ? 0 : days <= 5 ? 1 : days <= 10 ? 2 : 3, na: p.next_action_at ? +new Date(p.next_action_at) : Infinity, sort: (us ? 1e15 : 0) + lr };
-  }).sort(STATE.hotSort === "next" ? (a, b) => a.na - b.na : STATE.hotSort === "reply" ? (a, b) => b.lr - a.lr : (a, b) => b.sort - a.sort);
+    return { p, us, tag, lr, days, hl: days == null ? 3 : days <= 2 ? 0 : days <= 5 ? 1 : days <= 10 ? 2 : 3, na: p.next_action_at ? +new Date(p.next_action_at) : Infinity };
+  }).sort(STATE.hotSort === "next" ? (a, b) => a.na - b.na : STATE.hotSort === "reply" ? (a, b) => b.lr - a.lr : (a, b) => (!!b.us - !!a.us) || (a.na - b.na) || (b.lr - a.lr));
   d.hotStatus = pipe.filter(p => (p.status || "").toUpperCase() === "HOT").length;
   /* samples */
   const delivered = pipe.filter(p => p.delivered_at), wk = monday(t);
@@ -301,6 +305,27 @@ function derive() {
   const sumDays = (from, to, k) => { let s = 0; for (let x = from; x < to; x = addDays(x, 1)) s += (byDay[x] || {})[k] || 0; return s; }, chg = (now, was) => was > 0 ? (now - was) / was * 100 : null;
   P.dNw = chg(P.nw, sumDays(qStart, pStart, "nw")); P.dRep = chg(P.rep, sumDays(qStart, pStart, "rep")); P.dSamples = chg(P.samples, delivered.filter(p => { const dd = dayOf(p.delivered_at); return dd >= qStart && dd < pStart; }).length);
 
+  /* ---- 11-16: Paid clients page (Simas: "all of our paid clients, what are the next steps and important info") ---- */
+  const lastAt = d.lastAt = {}; R.tlite.forEach(m => { lastAt[lc(m.lead_email)] = m.at; });   // tlite is oldest first, so the newest wins
+  const notesBy = d.notesBy = {}, nKey = n => (n.noted_at || dayOf(n.created_at)) + (n.created_at || "");
+  (R.cnotes || []).forEach(n => { (notesBy[lc(n.lead_email)] || (notesBy[lc(n.lead_email)] = [])).push(n); }); Object.values(notesBy).forEach(a => a.sort((x, y) => nKey(y).localeCompare(nKey(x))));
+  const freeMail = /@(gmail|googlemail|hotmail|outlook|yahoo|icloud|me|aol|live|msn|proton|protonmail)\./i, domOf = e => freeMail.test(e) ? "" : e.split("@")[1] || "";
+  const PC = buyersL.map(g => ({ key: g.key, name: g.name, emails: new Set(g.emails), total: g.total, n: g.n, last: g.last, pays: pays.filter(p => payKey(p) === g.key), lead: null }));
+  R.pipeline.forEach(p => { const e = lc(p.email), txt = lc(`${p.paid || ""} ${p.notes || ""}`), dm = domOf(e);   // a buyer's payer email is often named in paid/notes, or shares the company domain
+    let c = PC.find(x => x.emails.has(e)) || (isBuyer(p) ? PC.find(x => !x.lead && [...x.emails].some(m => txt.includes(m) || (dm && domOf(m) === dm))) : null);
+    if (!c && !isBuyer(p)) return;
+    if (!c) PC.push(c = { key: "e:" + e, name: p.name || e, emails: new Set(), total: 0, n: 0, last: "", pays: [], lead: null });
+    if (!c.lead || isBuyer(p)) c.lead = p; c.emails.add(e); });
+  d.pClients.filter(a => a.packs.length && !PC.some(x => x.emails.has(lc(a.email)))).forEach(a => PC.push({ key: "e:" + lc(a.email), name: a.name || a.email, emails: new Set([lc(a.email)]), total: 0, n: 0, last: dayOf(a.packs[0].created_at), pays: [], lead: null }));   // bought in the portal only
+  const waitPaid = new Set(R.attention.filter(a => a.kind === "paid_waiting").map(a => lc(a.lead_email)));
+  const owedOf = p => { for (const t of [p.next_action, p.fu_note, p.notes]) { const s = String(t || "").split(/(?<=[.;!?|])\s+/).find(x => /\b(owed?|owing|still to (build|deliver|send|make)|left to (build|deliver|make)|remaining)\b/i.test(x)); if (s) return s; } return ""; };
+  d.paidC = PC.map(c => { const p = c.lead || {}, em = [...c.emails], acct = d.pClients.find(a => c.emails.has(lc(a.email)));
+    return { ...c, p, owner: p.owner || ownerOfInbox(p.inbox), name: p.name || c.name, prom: R.promises.filter(x => c.emails.has(lc(x.lead_email))), notes: em.flatMap(e => notesBy[e] || []).sort((x, y) => nKey(y).localeCompare(nKey(x))),
+      lastEmail: em.map(e => lastAt[e] || "").sort().pop() || "", owed: owedOf(p), waiting: em.some(e => waitPaid.has(e)), credits: acct && acct.packs.length ? acct.left : null,
+      at: [c.last, (/^\d{4}-\d\d-\d\d/.exec(p.paid || "") || [""])[0]].sort().pop() };
+  }).filter(own).sort((x, y) => y.at.localeCompare(x.at) || x.name.localeCompare(y.name));
+  d.paidLate = d.paidC.filter(c => c.p.next_action_at && new Date(c.p.next_action_at) < new Date()).length; d.paidNoNext = d.paidC.filter(c => !c.p.next_action).length; d.paidProm = sum(d.paidC, c => c.prom.length);
+
   /* ---- v2: "do next": the highest-value open actions, best first ---- */
   const nx = [], seenN = new Set(), push = x => { const k = (x.email || x.k) + "|" + x.title; if (!seenN.has(k)) { seenN.add(k); nx.push(x); } };
   (att.paid_waiting || []).forEach(x => push({ w: 100, icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", email: x.email }));
@@ -373,6 +398,27 @@ const noteTile = g => `<div class="tile pt"><div class="pt-top">${dB("pvideos", 
 const feedSeen = new Set();
 const feedRow = (e, fresh) => { const inner = `<span class="it ${e.c}"><svg><use href="#i-${e.icon}"/></svg></span><span class="fe-m"><b>${esc(cut(e.title, 64))}</b><small>${esc(cut(e.sub, 80))}</small></span><time>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</time>`;
   return e.email ? `<button type="button" class="fe${fresh ? " new" : ""}" data-act="lead" data-email="${esc(e.email)}">${inner}</button>` : `<button type="button" class="fe${fresh ? " new" : ""}" data-act="drill" data-k="${e.k}" data-a="${esc(e.a)}">${inner}</button>`; };
+
+/* ---------------- 11-16: Paid clients + Hot leads pages (search and owner filter; rows filter in place while typing) ---------------- */
+const KIND = { like: "Likes", dislike: "Dislikes", ask: "Asked for", fact: "Fact", price: "Price / deal" };
+const nDay = n => dLabel(n.noted_at || dayOf(n.created_at));
+const pageTools = (k, ph) => `<div class="cv-tools"><label class="search cv-s pg-s">${ic("search")}<input class="pg-q" data-k="${k}" type="search" value="${esc(STATE.pq[k] || "")}" placeholder="${ph}" aria-label="${ph}" autocomplete="off" spellcheck="false"></label><div class="seg" role="group" aria-label="Whose">${["All", "Simas", "Benas"].map(o => `<button type="button" data-act="owner" data-o="${o}" class="${STATE.owner === o ? "on" : ""}" aria-pressed="${STATE.owner === o}">${o}</button>`).join("")}</div></div>`;
+const pgRow = (k, txt, html) => { const q = lc(STATE.pq[k] || ""), s = lc(txt); return `<div class="tile pt" data-q="${esc(s)}"${q && !s.includes(q) ? " hidden" : ""}>${html}</div>`; };
+const nextLine = p => `<span><b>Next</b> ${esc(cut(p.next_action || "none set", 240))}${p.next_action_at ? ` · ${fDT(p.next_action_at)} ${dueChip(p.next_action_at)}` : ""}</span>`;
+let LASTW = null, LASTW_AT = 0;   // email -> their newest inbound message (threads); loaded when the Hot leads page opens, at most every 5 min
+function needLastWords() { if (Date.now() - LASTW_AT < 5 * 6e4) return; LASTW_AT = Date.now();
+  all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").order("at", { ascending: false })).then(rows => { const m = {}; rows.forEach(r => { const k = lc(r.lead_email); if (!m[k] && r.snippet) m[k] = r; }); LASTW = m; refreshDrill(); }).catch(() => { LASTW_AT = 0; }); }
+const lastWords = e => { const t = LASTW && LASTW[e], r = RAW.replies.find(x => x.kind === "REAL" && lc(x.lead_email) === e); return !r ? t || null : !t || new Date(r.received_at) > new Date(t.at) ? { at: r.received_at, snippet: r.snippet } : t; };
+const hotTile = ({ p, us, tag, lr }) => { const e = lc(p.email), pr = (D.notesBy[e] || []).find(n => n.kind === "price"), offer = pr ? pr.note : p.fu_note || "", w = lastWords(e), lt = Math.max(+new Date(D.lastAt[e] || 0), lr || 0),
+    money = isBuyer(p) || /\$\s?\d/.test(`${offer} ${p.next_action || ""} ${p.fu_note || ""} ${p.paid || ""}`);
+  return pgRow("hotlist", [p.name, p.email, p.show, p.owner, p.status, tag[0], offer, w && w.snippet, p.next_action].join(" "), `<div class="pt-top">${leadBtn(p.email, `<span class="av${us ? " hot" : ""}">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email)}</b><small>${esc(cut(p.show || p.email, 90))}</small></span>`, "row np0")}${cvChip(D.tc[e] || 0)}</div>
+    <div class="pt-meta"><span class="chip ${tag[1]}">${tag[0]}</span>${us ? `<span class="chip r">waiting on us</span>` : ""}${money ? `<span class="chip g">$ money</span>` : ""}${p.status ? `<span class="chip">${esc(p.status)}</span>` : ""}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}</div>
+    <div class="pt-lines"><span><b>Offer</b> ${offer ? `${esc(cut(offer, 240))}${pr ? ` · ${nDay(pr)}` : ""}` : "nothing pitched yet"}</span><span><b>Last words</b> ${w ? `“${esc(cut(unent(w.snippet), 220))}” · ${fDT(w.at)}` : LASTW ? "no reply on record" : "loading…"}</span><span><b>Last touch</b> ${lt ? fDT(lt) : "—"}</span>${nextLine(p)}</div>`); };
+const paidTile = c => { const p = c.p, inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(p.show || [...c.emails].join(", "), 90))}</small></span>`;
+  const bought = p.paid ? esc(cut(p.paid, 200)) : c.pays[0] ? `${usd(c.pays[0].amount)} · ${esc(PACK[c.pays[0].package] || "custom payment")} · ${fDT(c.pays[0].paid_at)}` : "no payment on record";
+  return pgRow("paid", [c.name, p.show, ...c.emails, c.owner, p.inbox, p.paid, p.next_action, c.owed, ...c.notes.map(n => n.note)].join(" "), `<div class="pt-top">${p.email ? leadBtn(p.email, inner, "row np0") : dB("client", c.key, inner, "row np0", "Open this client")}${dB("client", c.key, usd(c.total), `chip ${c.total ? "g" : ""}`, "Open payments, videos and the whole conversation")}</div>
+    <div class="pt-meta">${c.owner ? `<span class="chip">${esc(c.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${p.status ? `<span class="chip b">${esc(p.status)}</span>` : ""}${c.waiting ? `<span class="chip o" title="Paid 48 h+ ago and no delivery is indexed: check their Drive folder">deliveries not indexed</span>` : ""}${c.credits != null ? `<span class="chip g">${c.credits} portal credit${c.credits === 1 ? "" : "s"} left</span>` : ""}${cvChip(D.cn([...c.emails]))}</div>
+    <div class="pt-lines"><span><b>Bought</b> ${bought}${c.n > 1 ? ` · ${c.n} payments, ${usd(c.total)} in total` : ""}</span>${c.owed ? `<span><b>Owed</b> ${esc(cut(c.owed, 220))}</span>` : ""}${p.email ? nextLine(p) : `<span><b>Next</b> not in the samples pipeline</span>`}${c.prom.map(x => `<span><b>Promise</b> ${esc(cut(x.promise, 200))} ${dueChip(x.due_at)}</span>`).join("")}${c.notes.slice(0, 5).map(n => `<span><b>${KIND[n.kind] || esc(n.kind)}</b> ${esc(cut(n.note, 220))} · ${nDay(n)}</span>`).join("")}<span><b>Last email</b> ${c.lastEmail ? fDT(c.lastEmail) : "none synced"}</span></div>`); };
 
 /* ---------------- cards ---------------- */
 const CARDS = [
@@ -533,6 +579,10 @@ const CARDS = [
     <div class="stack sp"><button type="button" class="kv" data-act="jump" data-id="psamples"><span>Sample requests</span><span>${N(d.portal.req)}${d.portal.reqOpen ? ` · ${d.portal.reqOpen} new` : ""}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos in edit</span><span>${N(d.portal.edit)}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos ready</span><span>${N(d.portal.ready)}</span></button></div>` },
 { id: "sync", title: "Sync status", render: d => `<div class="stack">${d.sync.map(s => dB("sync", s.name, `<span class="it ${s.ok ? "c-ink" : "c-red"}"><svg><use href="#i-${s.ok ? "check" : "alert"}"/></svg></span><span class="row-main"><b>${esc({ instantly: "Sending", replies: "Replies", sheet: "Samples" }[s.name] || s.name)}</b><small>${esc(cut(/^\{/.test(s.detail || "") ? "synced" : s.detail, 40))}</small></span><span class="row-end"><small>${ago(s.ran_at)}</small></span>`, "tile row")).join("") || empty("No sync info.")}</div>` },
 { id: "export", title: "Export", mount(el) { el.innerHTML = `<button type="button" class="export mag" id="export" data-act="export"><i></i><span id="export-t"><svg><use href="#i-down"/></svg>Export leads CSV</span></button>`; }, update() {} },
+{ id: "moneypage", title: "Money page", mount(el) { el.innerHTML = `${head("💰 Money", `<span class="chip">founders only</span>`)}<p class="sub">Bills due in the next 45 days, the Stripe balance, payouts per founder, transfers and the 50/50 position.</p><div class="acts sp"><a class="act go" href="money.html">${ic("cash")}Open the Money page</a></div>`; }, update() {} },
+{ id: "paidc", title: "Paid clients", focus: ["paid", ""], render: d => `${head("Paid clients", "", true)}${big("paid", "", `${N(d.paidC.length)}<small>paying clients</small>`, "Open every paying client: next steps, promises, key info")}
+    <div class="stack sp">${kv("Next step overdue", `<span class="${d.paidLate ? "dn" : ""}">${N(d.paidLate)}</span>`, "paid", "")}${kv("Open promises", N(d.paidProm), "paid", "")}${kv("No next step set", N(d.paidNoNext), "paid", "")}</div>
+    <p class="sub">Newest first: what they bought, what is owed, the next step and their latest notes.</p>` },
 /* ---- client portal zone (second grid) ---- */
 { id: "psamples", grid: 2, title: "Portal: sample requests", focus: ["psamples", ""], render: d => `${head("Free sample requests", dB("psamples", "", d.pSamples.length, `chip ${d.pSamples.some(s => s.status === "requested") ? "o" : ""}`, "Open every sample request"), true)}<div class="stack">${d.pSamples.slice(0, 3).map(sampleTile).join("") || empty("No sample request yet. New ones land here the moment a client asks.")}</div>${d.pSamples.length > 3 ? dB("psamples", "", `Show all ${d.pSamples.length}`, "more") : ""}` },
 { id: "pvideos", grid: 2, cls: "w2", title: "Portal: video requests", focus: ["pvideos", ""], render: d => `${head("Video requests", dB("pvideos", "", d.pVideos.length, `chip ${d.pVideos.some(v => /^(received|revision)$/.test(v.status)) ? "o" : ""}`, "Open every video request"), true)}<div class="stack two">${d.pVideos.slice(0, 4).map(videoTile).join("") || empty("No video request yet. Paid clients send footage links from their portal and they show up here.")}</div>${d.pVideos.length > 4 ? dB("pvideos", "", `Show all ${d.pVideos.length}`, "more") : ""}` },
@@ -541,8 +591,8 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "attention", "hot", "activity", "today", "followups"], money: ["money", "goal", "revchart", "buyers", "topc", "alltime"], leads: ["moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
-  outreach: ["outreach", "newleads", "total", "week", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
+const TABS = { home: ["next", "attention", "hot", "activity", "today", "followups"], money: ["money", "goal", "revchart", "buyers", "topc", "alltime", "moneypage"], leads: ["moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+  outreach: ["outreach", "newleads", "total", "week", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["paidc", "portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -696,7 +746,8 @@ const DR = {
       <p class="sub sp">Needed per day = what is left, split over the ${D.daysLeft} days that remain (today included). On pace for = money so far ÷ days gone × days in the month. A ${usd(150)} Starter pack every day adds ${usd(150 * D.daysLeft)}; one ${usd(500)} monthly plan adds ${usd(500)}.</p>
       ${grp(`Payments in ${D.monthName}`, usd(D.month))}${stackOf(mp.map(payRow), "No payment this month yet.")}` }; },
   mood(a) { const list = a === "all" ? D.pipe.filter(p => !isBuyer(p)) : D.pipe.filter(p => mood(p) === a); return { title: a === "all" ? "Warm leads" : a === "buyer" ? "Buyers" : `Mood: ${MOOD_LABEL[a] || a}`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : " · " + STATE.owner} · click one to open it`, html: leadList([...list].sort((x, y) => +new Date(y.last_reply_at || 0) - +new Date(x.last_reply_at || 0)), p => [p.show, p.last_reply_at ? "last reply " + dLabel(dayOf(p.last_reply_at)) : ""].filter(Boolean).join(" · ")) }; },
-  hotlist() { return { title: "Hot leads", sub: `${D.hot.length} lead${D.hot.length === 1 ? "" : "s"} · ordered by ${{ wait: "who waits on us", next: "next action date", reply: "last reply" }[STATE.hotSort]}`, html: stackOf(D.hot.map(({ p, us, tag }) => lrow(p, `${us ? "WAITING ON US · " : ""}${p.next_action || "no next action set"}`, `<span class="row-end"><span class="chip ${tag[1]}">${tag[0]}</span>${cvChip(D.tc[lc(p.email)] || 0)}<small>${p.next_action_at ? "next " + dLabel(dayOf(p.next_action_at)) : p.last_reply_at ? "replied " + dLabel(dayOf(p.last_reply_at)) : ""}</small></span>`)), "No hot leads right now.") }; },
+  hotlist() { needLastWords(); return { title: "Hot leads", sub: `${D.hot.length} lead${D.hot.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}'s`} · ordered by ${{ wait: "waiting on us first, then next action", next: "next action date", reply: "last reply" }[STATE.hotSort]}`, html: pageTools("hotlist", "Search a name, show, offer or their words") + stackOf(D.hot.map(hotTile), "No hot leads right now.") }; },
+  paid() { return { title: "Paid clients", sub: `${D.paidC.length} paying client${D.paidC.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}'s`} · newest first · ${D.paidLate} next step${D.paidLate === 1 ? "" : "s"} overdue`, html: pageTools("paid", "Search a name, show, email or note") + stackOf(D.paidC.map(paidTile), "No paying client yet.") }; },
   att(a) { const L = { reply: "Replies waiting", followup: "Follow-ups due", overdue: "Overdue actions", paid_waiting: "Paid, not delivered", promises: "Promises past due", brief: "Said yes, no brief", followup_done: "Finished, park" }, kinds = a === "all" ? Object.keys(D.att) : [a];
     return { title: a === "all" ? "Needs attention" : L[a] || a, sub: "Click a name to open the lead", html: kinds.filter(k => D.att[k]).map(k => grp(L[k] || k, D.att[k].length) + `<div class="stack">${D.att[k].map(x => lrow({ email: x.email, name: x.name }, x.detail || "", x.due ? `<span class="row-end"><small>${fDT(x.due)}</small></span>` : "")).join("")}</div>`).join("") || empty("Nothing waiting. All clear.") }; },
   fu(a) { const list = a === "over" ? D.fuOver : a === "week" ? D.fuDays.flatMap(x => x.list) : (D.fuDays.find(x => x.day === a) || { list: [] }).list;
@@ -769,7 +820,7 @@ function openDrill(k, a = "", opener, back) {
   const src = fresh && opener && opener.closest ? opener.closest(".card,.hero") : null;
   if (fresh && document.startViewTransition && !RM) { if (src) src.classList.add("vt-src"); M_SRC = src; document.startViewTransition(() => { if (src) src.classList.remove("vt-src"); run(); }); } else run();
 }
-function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client") return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
+function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || document.activeElement?.classList.contains("pg-q")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
 function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const src = M_SRC && M_SRC.isConnected ? M_SRC : null, go = () => { veil.hidden = true; STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
   if (document.startViewTransition && !RM) { const vt = document.startViewTransition(go); const done = () => { if (src) src.classList.remove("vt-src"); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
@@ -1102,6 +1153,7 @@ document.addEventListener("pointerdown", ev => { const pl = ev.target.closest &&
 document.addEventListener("focusin", ev => { const pl = ev.target.classList && ev.target.classList.contains("plot") ? ev.target : null; if (pl && pl.matches(":focus-visible")) { const P = PLOT[pl.dataset.plot]; if (P) { P.paint(P.i); pl.classList.add("hov"); } } });
 document.addEventListener("focusout", ev => { if (ev.target.classList && ev.target.classList.contains("plot")) ev.target.classList.remove("hov"); });
 document.addEventListener("input", ev => { if (ev.target.classList && ev.target.classList.contains("cv-q")) { const w = ev.target.closest(".cvw"), ms = w && CONVS.get(w.dataset.cv); if (ms) $(".conv", w).innerHTML = convMsgs(ms, ev.target.value); return; }
+  if (ev.target.classList && ev.target.classList.contains("pg-q")) { STATE.pq[ev.target.dataset.k] = ev.target.value; const q = lc(ev.target.value); $$("#m-body [data-q]").forEach(el => { el.hidden = !!q && !el.dataset.q.includes(q); }); return; }
   if (ev.target.id === "q") { STATE.q = ev.target.value; STATE.sel = 0; renderSearch(); } else if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
 document.addEventListener("keydown", ev => {
   const ae = document.activeElement, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ae?.tagName || ""), L = layer();
