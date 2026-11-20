@@ -233,6 +233,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .cmp td{color:var(--ink);font-weight:500;width:31%}
 .cmp td.yes{color:#0A5C33}
 .cmp tr.grp th{background:transparent;padding:26px 18px 8px;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text);border-bottom:1px solid var(--hair-2)}
+
+.cmp{min-width:860px}
+.cmp tbody th{width:32%}.cmp td{width:23%}
+.cmp td.val{color:var(--muted);font-weight:400;font-size:15px}
+.cmp tr.tot th,.cmp tr.tot td{border-top:2px solid var(--ink);border-bottom:0;font-size:18px;font-weight:600;color:var(--ink)}
+.cmp tr.tot td.val{font-size:16px;color:var(--body)}
 </style>
 </head>
 <body>
@@ -317,34 +323,37 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 <section aria-labelledby="plans" id="plans-sec">
   <div class="wrap">
     <div class="head"><p class="eyebrow">Your plan</p><h2 id="plans">What you get, <span class="gold">side by side</span></h2>
-      <p class="lede">Two ways to work with us. Every row says what it is, in one line.</p></div>
+      <p class="lede">Two ways to work with us. Every row says what it is, in one line. The last column shows what agencies list for the same work on its own.</p></div>
     <div class="cmpwrap"><table class="cmp">
       <thead><tr><th></th>
         <th class="main"><span class="tag">Recommended</span><b>Sales Engine: Full Business</b><span class="pr">$2,500 <small>a month</small></span><span class="draft">not agreed: Benas $2,500 · Simas about $2,000</span></th>
-        <th><span class="tag">Small start</span><b>Lead Magnet Test</b><span class="pr">$600 <small>a month</small></span></th></tr></thead>
+        <th><span class="tag">Small start</span><b>Lead Magnet Test</b><span class="pr">$600 <small>a month</small></span></th>
+        <th><span class="tag">If hired separately</span><b>Listed agency prices</b></th></tr></thead>
       <tbody>
-      <tr class="grp"><th colspan="3">Your videos</th></tr>
-      <tr><th scope="row"><b>Shorts in your look</b><span>Your best lines as 30–50 second videos: a yellow question first, your WTFreud! lettering, your end card.</span></th><td class="yes">60–90 a month, more when needed</td><td>Your 30 a month continue, on your current $300 plan</td></tr>
-      <tr><th scope="row"><b>Daily posting</b><span>We post for you on TikTok, Instagram, Facebook and YouTube Shorts, with titles, descriptions and hashtags.</span></th><td class="yes">Every day</td><td>Every day</td></tr>
-      <tr><th scope="row"><b>Your show</b><span>Each long episode edited, posted and announced to your list.</span></th><td class="yes">2 episodes a month</td><td>Not included</td></tr>
-      <tr class="grp"><th colspan="3">Your sales funnel</th></tr>
-      <tr><th scope="row"><b>Keyword funnel</b><span>Viewers comment one word. Your page messages them your free chapter and collects their email address.</span></th><td class="yes">2 funnels: Healing Narcissistic Wounds first, then Healing Childhood Wounds and the book</td><td>1 funnel: Healing Narcissistic Wounds</td></tr>
-      <tr><th scope="row"><b>Welcome emails</b><span>Five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes">5 per funnel</td><td>Open <span class="draft">Benas deciding</span></td></tr>
-      <tr><th scope="row"><b>Weekly email</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes">4 a month</td><td>Not included</td></tr>
-      <tr><th scope="row"><b>Consultation booking</b><span>A calendar on your site, so people book a time themselves.</span></th><td class="yes">Included</td><td>Not included</td></tr>
-      <tr class="grp"><th colspan="3">Your websites</th></tr>
-      <tr><th scope="row"><b>Sites that convert</b><span>We keep your look and make each site sell: layout errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes">All four sites, on a plan we agree with you</td><td>Not included</td></tr>
-      <tr class="grp"><th colspan="3">Your bigger moments</th></tr>
-      <tr><th scope="row"><b>Book launch</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes">Included</td><td>Not included</td></tr>
-      <tr><th scope="row"><b>Webinars</b><span>Sign-up page, reminders, the room, the tech on the day, the replay and follow-up emails.</span></th><td class="yes">Included <span class="draft">how often: Benas deciding</span></td><td>Not included</td></tr>
-      <tr><th scope="row"><b>The Gift House</b><span>The site fixed, an inquiry form for scouts, and videos of the house once we have footage.</span></th><td class="yes">Included</td><td>Not included</td></tr>
-      <tr class="grp"><th colspan="3">Working with us</th></tr>
-      <tr><th scope="row"><b>Weekly report</b><span>What we posted, which videos did best, new email addresses, what comes next.</span></th><td class="yes">Every week</td><td>A monthly summary</td></tr>
-      <tr><th scope="row"><b>Strategy calls</b><span>Time with Benas and Simas to plan the next weeks.</span></th><td class="yes">4 a month, and you can book more</td><td>By email</td></tr>
-      <tr><th scope="row"><b>Our guarantee</b><span>If your funnel brings no program sale within 30 days of going live, you choose.</span></th><td class="yes">One more month free, or your first month refunded <span class="draft">refund not agreed: Simas's rule</span></td><td>No guarantee</td></tr>
+      <tr class="grp"><th colspan="4">Your videos</th></tr>
+      <tr><th scope="row"><b>Shorts in your look</b><span>Your best lines as 30–50 second videos: a yellow question first, your WTFreud! lettering, your end card.</span></th><td class="yes">60–90 a month, more when needed</td><td>Your 30 a month continue, on your current $300 plan</td><td class="val">from $2,350 a month</td></tr>
+      <tr><th scope="row"><b>Daily posting</b><span>We post for you on TikTok, Instagram, Facebook and YouTube Shorts, with titles, descriptions and hashtags.</span></th><td class="yes">Every day</td><td>Every day</td><td class="val">from $500 a month</td></tr>
+      <tr><th scope="row"><b>Your show</b><span>Each long episode edited, posted and announced to your list.</span></th><td class="yes">2 episodes a month</td><td>Not included</td><td class="val">from $300 a month</td></tr>
+      <tr class="grp"><th colspan="4">Your sales funnel</th></tr>
+      <tr><th scope="row"><b>Keyword funnel</b><span>Viewers comment one word. Your page messages them your free chapter and collects their email address.</span></th><td class="yes">2 funnels: Healing Narcissistic Wounds first, then Healing Childhood Wounds and the book</td><td>1 funnel: Healing Narcissistic Wounds</td><td class="val">from $279 per funnel page</td></tr>
+      <tr><th scope="row"><b>Welcome emails</b><span>Five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes">5 per funnel</td><td>Open <span class="draft">Benas deciding</span></td><td class="val">about $1,500 per sequence</td></tr>
+      <tr><th scope="row"><b>Weekly email</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes">4 a month</td><td>Not included</td><td class="val">from $300 a month</td></tr>
+      <tr><th scope="row"><b>Consultation booking</b><span>A calendar on your site, so people book a time themselves.</span></th><td class="yes">Included</td><td>Not included</td><td class="val"></td></tr>
+      <tr class="grp"><th colspan="4">Your websites</th></tr>
+      <tr><th scope="row"><b>Sites that convert</b><span>We keep your look and make each site sell: layout errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes">All four sites, on a plan we agree with you</td><td>Not included</td><td class="val">from $500 per page</td></tr>
+      <tr class="grp"><th colspan="4">Your bigger moments</th></tr>
+      <tr><th scope="row"><b>Book launch</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes">Included</td><td>Not included</td><td class="val">from $3,500</td></tr>
+      <tr><th scope="row"><b>Webinars</b><span>Sign-up page, reminders, the room, the tech on the day, the replay and follow-up emails.</span></th><td class="yes">Included <span class="draft">how often: Benas deciding</span></td><td>Not included</td><td class="val">from $500 per event</td></tr>
+      <tr><th scope="row"><b>The Gift House</b><span>The site fixed, an inquiry form for scouts, and videos of the house once we have footage.</span></th><td class="yes">Included</td><td>Not included</td><td class="val"></td></tr>
+      <tr class="grp"><th colspan="4">Working with us</th></tr>
+      <tr><th scope="row"><b>All the tools</b><span>The message tool, the email sender, the booking calendar and the webinar room. We pay for them. The accounts are in your name.</span></th><td class="yes">Included</td><td>Included</td><td class="val"></td></tr>
+      <tr><th scope="row"><b>Weekly report</b><span>What we posted, which videos did best, new email addresses, what comes next.</span></th><td class="yes">Every week</td><td>A monthly summary</td><td class="val"></td></tr>
+      <tr><th scope="row"><b>Strategy calls</b><span>Time with Benas and Simas to plan the next weeks.</span></th><td class="yes">4 a month, and you can book more</td><td>By email</td><td class="val">from $2,000 a month</td></tr>
+      <tr><th scope="row"><b>Our guarantee</b><span>If your funnel brings no program sale within 30 days of going live, you choose.</span></th><td class="yes">One more month free, or your first month refunded <span class="draft">refund not agreed: Simas's rule</span></td><td>No guarantee</td><td class="val"></td></tr>
+      <tr class="tot"><th scope="row"><b>Every month, in total</b><span>The Full plan replaces your $300 Shorts plan.</span></th><td class="yes">$2,500</td><td>$600, plus your $300 Shorts plan</td><td class="val">over $5,400 a month, before the one-time builds</td></tr>
       </tbody>
     </table></div>
-    <p class="small" style="margin-top:16px">Your part for the guarantee: approve posts within 48 hours and keep your checkout working. <span class="draft">Open with Benas: does the Full plan replace the $300 Shorts plan? Who pays for the tools? A market-value column with real agency prices is coming from Benas's side.</span></p>
+    <p class="small" style="margin-top:16px">Your part for the guarantee: approve posts within 48 hours and keep your checkout working. <span class="draft">Value column: low end of listed prices from Benas's side (ShortVids, Fame Clips, PodQuake, Contra and others). Sources go in a footnote before this is sent. The calls figure comes from marketing-advisory retainers, which is a loose match.</span></p>
   </div>
 </section>
 
