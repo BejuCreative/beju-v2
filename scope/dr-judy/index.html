@@ -197,6 +197,18 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .draftbar{background:#FFF4C2;color:#5B4700;border-bottom:1px solid #E6D27A;padding:10px 16px;text-align:center;font-size:14px;font-weight:500}
 .draft{background:#FFF4C2;color:#5B4700;border-radius:6px;padding:2px 7px;font-size:13px;font-weight:500;line-height:1.5;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .wrapw{width:min(1120px,calc(100% - 32px))}
+/* top bar: stays in view, with the three actions */
+.nav{position:sticky;top:0;z-index:20;background:#fff;padding-top:12px}
+.nav .wrap{padding-bottom:12px}
+.navbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+section[id],header .toc{scroll-margin-top:84px}
+@media (max-width:760px){
+  .nav .wrap{flex-wrap:wrap;gap:8px}
+  .navbtns{width:100%;justify-content:flex-start;gap:6px}
+  .navbtns .btn.sm{height:38px;padding:0 12px;font-size:14px}
+  .navbtns .site-btn{display:none!important}
+  section[id]{scroll-margin-top:118px}
+}
 .band{background:var(--soft)}
 .head{max-width:44em}
 .secno{display:inline-block;min-width:2.1em;color:var(--dim);font-weight:500}
@@ -434,8 +446,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 <nav class="nav" aria-label="Scope">
   <div class="wrap">
     <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
-    <a class="btn ghost sm site-btn noprint" href="https://bejucreative.digital/">Visit our website</a>
-    <a class="btn primary sm noprint" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
+    <div class="navbtns noprint">
+      <a class="btn ghost sm" href="#plan">See the plans</a>
+      <a class="btn ghost sm" href="Dr-Judy-Scope-BEJU-Creative.pdf" download>Download PDF</a>
+      <a class="btn ghost sm site-btn" href="https://bejucreative.digital/">Visit our website</a>
+      <a class="btn primary sm" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
+    </div>
   </div>
 </nav>
 <header class="hero">
