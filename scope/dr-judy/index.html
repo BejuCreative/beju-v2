@@ -4,438 +4,473 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Dr. Judy Scope (DRAFT) · BEJÚ Creative</title>
-<meta name="theme-color" content="#FFFFFF">
+<title>Dr. Judy Scope (DRAFT) · Beju Creative</title>
+<meta name="theme-color" content="#1E2812">
+<link rel="icon" type="image/png" sizes="32x32" href="https://bejucreative.digital/favicon-32x32.png">
+<link rel="preload" href="https://bejucreative.digital/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="https://bejucreative.digital/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+
 <style>
-/* Scope DRAFT for Dr. Judy Rosenberg, from the approved scope template v8 WHITE (Simas 11-18 ~22:0x: "make the scope white").
-   Readable, professional, site font Geist only; no badges, no per-Short price, paying = accepting;
-   50/50 editing vs content engine; big centred buttons; Start the plan → Stripe; cal.com call button. Private link, noindex. */
-@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
-:root{
-  --bg:#FFFFFF; --soft:#F7F6F1; --ink:#11150E; --body:#3A4135; --muted:#646C5C; --dim:#7A8272;
-  --gold:#22D16F; --gold-text:#0E7A44; --gold-soft:#E7FBEF; --green-head:#11A85A; --hair:#E7E4DA; --hair-2:#D9D5C8;
-  --sans:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  color-scheme:light;
-}
-*{box-sizing:border-box}
-html{background:var(--bg);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--body);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
-.wrap{position:relative;width:min(960px,calc(100% - 32px));margin-inline:auto}
-section{position:relative;padding:clamp(52px,7vw,92px) 0}
-h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;font-weight:600}
-h1{font-size:clamp(40px,6.6vw,68px);line-height:1.04;letter-spacing:-.035em}
-h2{font-size:clamp(28px,3.6vw,40px);line-height:1.12;letter-spacing:-.025em}
-h3{font-size:19px;line-height:1.3;letter-spacing:-.01em}
+@font-face{font-family:"Newsreader";src:url(https://bejucreative.digital/fonts/newsreader-latin.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Newsreader";src:url(https://bejucreative.digital/fonts/newsreader-italic-latin.woff2) format("woff2");font-style:italic;font-weight:200 800;font-display:swap}
+@font-face{font-family:"Geist";src:url(https://bejucreative.digital/fonts/geist-latin.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{--paper:#F6F3EA;--card:#FFFDF8;--ink:#14170F;--body:#3B4034;--muted:#6B7062;--hair:#E3DED0;--gold:#8A6A12;--gold-hi:#FFD35C;
+  --cream:#F7F5EC;--serif:"Newsreader","Times New Roman",serif;--sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--body);font:400 17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto}a{color:inherit}
+.wrap{width:min(1040px,calc(100% - 40px));margin-inline:auto}
+h1,h2,h3{font-family:var(--serif);font-weight:340;color:var(--ink);letter-spacing:-.022em;margin:0;text-wrap:balance}
+h2{font-size:clamp(32px,4.2vw,50px);line-height:1.04}
+h3{font-size:22px;line-height:1.2;font-weight:400}
 p{margin:0}
-.gold{color:var(--green-head)}
-.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-text)}
-.head{display:grid;gap:12px}
-.lede{font-size:clamp(18px,1.6vw,20px);line-height:1.6;max-width:36em;color:var(--body)}
-.small{font-size:15px;color:var(--muted)}
-.btn{display:inline-flex;align-items:center;justify-content:center;height:62px;padding:0 38px;border-radius:999px;font:500 18px var(--sans);text-decoration:none;white-space:nowrap;transition:background .15s ease,border-color .15s ease}
-.btn.primary{background:var(--ink);color:#fff;box-shadow:0 14px 34px -18px rgba(17,21,14,.55)}
-.btn.primary:hover{background:#2A3322}
-.btn.ghost{color:var(--ink);background:#fff;border:1px solid var(--hair-2)}
-.btn.ghost:hover{border-color:var(--ink)}
-.btn.sm{height:42px;padding:0 18px;font-size:15px;box-shadow:none}
-.btn:focus-visible,summary:focus-visible{outline:3px solid rgba(34,209,111,.55);outline-offset:3px}
-.btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:34px}
-.card{border-radius:20px;padding:24px 26px;background:#fff;border:1px solid var(--hair);box-shadow:0 1px 2px rgba(17,21,14,.04),0 10px 30px -22px rgba(17,21,14,.18)}
+em{font-style:italic;font-weight:300;color:var(--gold)}
+.lede{font-size:clamp(17px,1.5vw,19px);color:var(--body);max-width:36em}
+.kicker{font:500 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+section{padding:clamp(64px,8vw,104px) 0;border-top:1px solid var(--hair)}
+.head{display:grid;gap:14px;margin-bottom:clamp(30px,4vw,48px);max-width:40em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 26px;border-radius:999px;font:500 16px/1 var(--sans);text-decoration:none;transition:transform .25s ease,background .25s,box-shadow .25s}
+.btn:hover{transform:translateY(-1px)}
+.btn.dark{background:var(--ink);color:var(--cream)}
+.btn.line{box-shadow:inset 0 0 0 1px #CFC9B8;color:var(--ink)}
+.btn.cream{background:var(--cream);color:#191a12}
+.btn.glass{background:rgba(255,255,255,.1);color:var(--cream);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.row{display:flex;flex-wrap:wrap;gap:12px}
 
-/* top bar */
-.nav{position:relative;z-index:2;padding-top:18px}
-.nav .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--hair)}
-.brand{font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
-.nav .for{font-size:14px;color:var(--muted)}
-
-/* hero (centred) */
-.hero{padding-top:clamp(64px,10vw,124px);padding-bottom:clamp(40px,5vw,60px);text-align:center}
-.hero .lede{margin:18px auto 0}
-.meta{margin:36px auto 0;display:flex;justify-content:center;gap:10px 28px;flex-wrap:wrap;font-size:14px;color:var(--muted);max-width:52em}
-.meta b{color:var(--ink);font-weight:500}
+/* hero: the website's olive -> gold gradient, static */
+.hero{position:relative;color:var(--cream);padding:22px 0 clamp(70px,9vw,120px);overflow:hidden;
+  background:radial-gradient(90% 70% at 85% 10%,rgba(255,211,92,.16),transparent 60%),
+             radial-gradient(70% 60% at 10% 100%,rgba(176,94,72,.28),transparent 65%),
+             linear-gradient(172deg,#0B0E08 0%,#1E2812 34%,#4E5A22 68%,#7C7A33 88%,#8F6A3E 100%)}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.hero .wrap{position:relative;z-index:1}
+.nav{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 6px 6px 18px;border-radius:999px;
+  background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.nav img{height:22px;width:auto;display:block}
+.nav .links{display:flex;gap:22px;font-size:15px;color:rgba(247,245,236,.78)}
+.nav .links a{text-decoration:none}.nav .links a:hover{color:var(--cream)}
+.nav .btn{min-height:42px;padding:0 20px;font-size:15px}
+@media(max-width:760px){.nav .links{display:none}}
+.hero .doc{margin-top:clamp(70px,10vw,120px);font:400 14px/1 var(--sans);color:rgba(247,245,236,.7);letter-spacing:.02em}
+.hero h1{margin-top:18px;color:var(--cream);font-size:clamp(46px,7.4vw,96px);line-height:.98;letter-spacing:-.035em;max-width:11.5em}
+.hero h1 em{color:var(--gold-hi)}
+.hero .lede{color:rgba(247,245,236,.86);margin-top:22px}
+.hero .row{margin-top:34px}
+.meta{display:grid;grid-template-columns:repeat(2,1fr);margin-top:clamp(48px,6vw,72px);border-top:1px solid rgba(255,255,255,.16)}
+.meta div{padding:18px 18px 0 0}
+.meta span{display:block;font-size:13px;color:rgba(247,245,236,.62)}
+.meta b{display:block;margin-top:6px;font:400 19px/1.25 var(--serif);color:var(--cream)}
+@media(min-width:860px){.meta{grid-template-columns:repeat(4,1fr)}.meta div{padding:20px 22px 0 22px;border-left:1px solid rgba(255,255,255,.16)}.meta div:first-child{padding-left:0;border-left:0}}
 
 /* facts */
-.facts{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);text-align:center}
-.facts div{padding:26px 12px;display:grid;gap:4px}
-.facts div+div{border-left:1px solid var(--hair)}
-.facts b{font-size:clamp(24px,2.6vw,30px);font-weight:600;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
-.facts span{font-size:15px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:1fr;border:1px solid var(--hair);border-radius:22px;background:var(--card);margin-top:-46px;position:relative;z-index:2;box-shadow:0 20px 40px -30px rgba(20,23,15,.35)}
+.facts>div{padding:28px 28px}
+.facts b{display:block;font:340 clamp(30px,3.2vw,42px)/1.05 var(--serif);letter-spacing:-.025em;color:var(--ink)}
+.facts span{display:block;margin-top:10px;color:var(--muted);font-size:16px}
+@media(min-width:760px){.facts{grid-template-columns:repeat(3,1fr)}.facts>div+div{border-left:1px solid var(--hair)}}
+section.first{border-top:0;padding-top:0;padding-bottom:clamp(40px,5vw,64px)}
 
 /* goal */
-.quotes{display:grid;gap:14px;margin-top:26px}
-.quote{margin:0;padding:4px 0 4px 22px;border-left:3px solid var(--gold);font-size:clamp(20px,2.2vw,25px);line-height:1.4;font-weight:500;color:var(--ink);max-width:36em}
+.quotes{display:grid;gap:30px}
+.quote{font:340 clamp(24px,2.8vw,36px)/1.22 var(--serif);letter-spacing:-.018em;color:var(--ink);padding-left:22px;border-left:2px solid var(--gold);max-width:26em}
+.quote cite{display:block;margin-top:12px;font:400 14px var(--sans);color:var(--muted);font-style:normal}
 
-/* engine */
-.split{margin-top:30px;display:grid;gap:10px}
-.bar{display:grid;grid-template-columns:1fr 1fr;height:14px;border-radius:999px;overflow:hidden;border:1px solid var(--hair-2)}
-.bar span:first-child{background:var(--gold)}
-.bar span:last-child{background:#E6EAE4}
-.bar-legend{display:flex;justify-content:space-between;gap:12px;font-size:15px;color:var(--muted)}
-.bar-legend b{color:var(--ink);font-weight:600}
-.grid4{margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.grid4 .card{display:grid;gap:8px;align-content:start}
-.tag{justify-self:start;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
-.wide{margin-top:14px;padding:30px 30px;display:grid;gap:10px;background:var(--gold-soft);border-color:rgba(34,209,111,.55)}
-.wide h3{font-size:clamp(20px,2.2vw,24px)}
+/* sample */
+.sample{display:grid;gap:40px;align-items:center}
+@media(min-width:860px){.sample{grid-template-columns:1fr auto}}
+.phone{width:min(290px,76vw);aspect-ratio:9/16;margin-inline:auto;border-radius:32px;padding:8px;background:#151810;box-shadow:0 30px 60px -30px rgba(20,23,15,.55)}
+.phone iframe{display:block;width:100%;height:100%;border:0;border-radius:25px;background:#000}
+.from{font-size:15px;color:var(--muted);margin-top:14px}
 
-/* list */
-.list{margin-top:28px;border-top:1px solid var(--hair)}
-.item{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;padding:22px 0;border-bottom:1px solid var(--hair);align-items:baseline}
+/* how we work, redone: two calm columns, no % boxes */
+.split{display:grid;gap:18px}
+@media(min-width:760px){.split{grid-template-columns:1fr 1fr}}
+.pane{background:var(--card);border:1px solid var(--hair);border-radius:22px;padding:30px 30px 10px}
+.pane h3{font-size:28px}.pane h3 small{display:block;font:500 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.pane ul{list-style:none;padding:0;margin:18px 0 0}
+.pane li{padding:16px 0;border-top:1px solid var(--hair)}
+.pane li b{display:block;color:var(--ink);font-weight:500}
+.pane li span{display:block;font-size:15.5px;color:var(--body);margin-top:3px}
 
-/* steps */
-.grid3{margin-top:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.step{display:grid;gap:8px;align-content:start}
-.num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:14px}
+/* lists */
+.list{border-top:1px solid var(--hair)}
+.item{display:grid;gap:6px 40px;padding:24px 0;border-bottom:1px solid var(--hair)}
+@media(min-width:760px){.item{grid-template-columns:1fr 1.3fr;align-items:baseline}}
+.item h3{font-size:clamp(22px,2.3vw,28px)}
+.item p{color:var(--body)}
+
+/* after you pay */
+.timeline{display:grid;gap:14px;counter-reset:t}
+@media(min-width:900px){.timeline{grid-template-columns:repeat(4,1fr)}}
+.tl{background:var(--card);border:1px solid var(--hair);border-radius:20px;padding:24px 22px;display:grid;gap:8px;align-content:start}
+.tl .when{font:italic 400 40px/1 var(--serif);color:var(--gold)}
+@media print{.tl .when{font-size:26px}}
+.tl h3{font-size:22px}
+.tl p{font-size:15.5px}
+
+/* communication */
+.comm{display:grid;gap:14px}
+@media(min-width:760px){.comm{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.comm{grid-template-columns:repeat(3,1fr)}}
+.comm>div{background:var(--card);border:1px solid var(--hair);border-radius:20px;padding:24px}
+.comm h3{font-size:21px;margin-bottom:6px}.comm p{font-size:15.5px}
+
+/* trusted by */
+.trust{background:var(--ink);color:var(--cream);border-radius:28px;padding:clamp(30px,4vw,48px);display:grid;gap:30px}
+@media(min-width:860px){.trust{grid-template-columns:1.3fr 1fr;align-items:center}}
+.trust .kicker{color:rgba(247,245,236,.72);font-size:15px;letter-spacing:.16em}
+.logos{display:flex;flex-wrap:wrap;align-items:center;gap:18px 34px;margin-top:18px}
+.logos a{display:inline-grid;gap:6px;text-decoration:none;color:var(--cream)}
+.logos img{height:40px;width:auto}
+.logos .wm{font:400 40px/1 var(--serif);letter-spacing:-.02em}
+.logos .tt{font-size:15px;color:rgba(247,245,236,.72)}
+.tnums{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.tnums b{display:block;font:300 clamp(46px,5vw,64px)/1 var(--serif);color:var(--cream);letter-spacing:-.03em}
+.tnums span{display:block;margin-top:8px;font-size:17px;color:rgba(247,245,236,.82)}
 
 /* faq */
-.cols{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(24px,5vw,72px);align-items:start}
-details{border-bottom:1px solid var(--hair);padding:18px 0}
-details:first-of-type{border-top:1px solid var(--hair)}
-summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;color:var(--ink);font-weight:500;font-size:18px}
-summary::-webkit-details-marker{display:none}
-summary::after{content:"+";color:var(--muted);font-weight:300;font-size:22px;line-height:1}
-details[open] summary::after{content:"–"}
-details p{margin-top:8px;color:var(--body);max-width:36em}
+.faq{border-top:1px solid var(--hair)}
+.faq details{border-bottom:1px solid var(--hair)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:20px;padding:22px 0;font:400 clamp(20px,2vw,24px)/1.2 var(--serif);color:var(--ink)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:300 26px/1 var(--sans);color:var(--muted)}
+.faq details[open] summary::after{content:"\2013"}
+.faq details>p{padding:0 0 22px;max-width:40em}
 
 /* close */
-.close{text-align:center;padding-bottom:clamp(70px,10vw,130px)}
-.close .card{padding:clamp(34px,5vw,56px) clamp(20px,4vw,48px);background:var(--soft)}
-.close .lede{margin:14px auto 0}
-.call{margin-top:28px;padding-top:24px;border-top:1px solid var(--hair-2);display:grid;justify-items:center;gap:14px}
-.call p{color:var(--muted);font-size:16px}
-.terms{margin:26px auto 0;max-width:42em;font-size:14px;color:var(--muted)}
-.terms a{color:var(--muted)}
-.site-btn{border:1px solid var(--hair-2)}
-@media (max-width:760px){.nav .site-btn{display:inline-flex}}
-/* proof v2 (Benas 11-19 ~00:28): bigger, its own section, logos at wordmark size, big numbers */
-.proof{padding:clamp(36px,5vw,64px) 0}
-.proof-card{display:grid;justify-items:center;gap:26px;text-align:center;padding:clamp(30px,4vw,48px) 24px;border:1px solid var(--hair);border-radius:24px;background:var(--soft,#F7F6F1)}
-.proof-logos{display:flex;align-items:center;justify-content:center;gap:28px 56px;flex-wrap:wrap}
-.proof-logos img{height:48px;width:auto;filter:brightness(0);display:block}
-.proof-wordmark{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1;color:var(--ink);text-decoration:none}
-.proof-logos a:hover{opacity:.75}
-.proof-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 56px;border-top:1px solid var(--hair);padding-top:24px;width:min(640px,100%)}
-.proof-nums b{display:block;font-size:clamp(44px,5.6vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink)}
-.proof-nums span{display:block;margin-top:6px;font-size:15px;color:var(--muted)}
-@media (max-width:560px){.proof-nums{grid-template-columns:1fr}.proof-logos{flex-direction:column}}
-/* BEJÚ mark (dark on the white pages) */
-.brand{display:inline-flex;align-items:center;gap:10px}
-.brand img{height:26px;width:auto;filter:brightness(0);display:block}
-.foot-mark{height:18px;width:auto;filter:brightness(0);vertical-align:-3px;margin-right:8px;opacity:.85}
-/* polish (Benas 11-19 ~00:45): no sideways drift, readable small text on phones, proof a bit smaller, TikTok links, comms grid */
-html,body{overflow-x:hidden;max-width:100%}
-img{max-width:100%}
-.proof-logos img{height:40px}
-.proof-wordmark{font-size:36px}
-.proof-nums b{font-size:clamp(36px,4.6vw,46px)}
-.proof-item{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none}
-.tt{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.02em}
-.proof-item:hover .tt{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-.comm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:26px}
-.comm .card{display:grid;gap:6px;align-content:start}
-.accept{margin-top:16px;font-size:15px;color:var(--muted)}
-.accept a{color:var(--ink)}
-@media (max-width:560px){
-  .meta{font-size:15px;flex-direction:column;align-items:center;gap:4px}
-  .small,.card p{font-size:16px}
-  .tag,.eyebrow{font-size:13px}
-  .facts span{font-size:15px}
-  .proof-logos img{height:34px}
-  .proof-wordmark{font-size:32px}
-  .item p,.bar-legend{font-size:15px}
-}
-/* Benas fixes 11-19 01:0x: 50/50 as two equal cards, readable text everywhere */
-.split2{margin-top:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.split2 .half{display:grid;gap:8px;align-content:start;padding:28px 26px}
-.split2 .big{font-size:clamp(40px,5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--green-head,#11A85A)}
-.split2 h3{font-size:22px}
-.split2 p{font-size:17px;color:var(--ink);line-height:1.5}
-.small,.card p{font-size:16px;color:var(--body)}
-.meta{font-size:15px;color:var(--body)}
-.facts span{font-size:16px;color:var(--body)}
-.terms{font-size:15px;color:var(--body)}
-.accept{color:var(--body)}
-.tag{font-size:13px}
-.proof-nums span{font-size:16px;color:var(--body)}
-@media (max-width:640px){.split2{grid-template-columns:1fr}}
-footer{border-top:1px solid var(--hair);padding:24px 0 40px}
-footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
+.close{text-align:center}
+.close h2{font-size:clamp(42px,6vw,76px)}
+.close .lede{margin:18px auto 0}
+.close .row{justify-content:center;margin-top:30px}
+.close .call{margin-top:18px;color:var(--muted)}
+.close .call a{color:var(--ink)}
+.fine{margin:28px auto 0;max-width:38em;font-size:14px;line-height:1.6;color:var(--muted)}
+footer{padding:28px 0 40px;border-top:1px solid var(--hair);font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between;align-items:center}
+footer img{height:20px;width:auto;display:block;filter:brightness(0);opacity:.8}
+@media(max-width:600px){.hero .row .btn,.close .row .btn{width:100%}}
 
-@media (max-width:760px){
-  body{font-size:17px}
-  .facts{grid-template-columns:1fr}
-  .facts div+div{border-left:0;border-top:1px solid var(--hair)}
-  .item{grid-template-columns:1fr;gap:4px}
-  .grid3,.grid4{grid-template-columns:1fr}
-  .cols{grid-template-columns:1fr}
-  .nav .for{display:none}
-  .btns{flex-direction:column;align-items:stretch}
-  .btn{width:100%}
-  .btn.sm,.call .btn{width:auto}
-}
+/* tiny fades only */
+.fade{opacity:0;transform:translateY(10px);transition:opacity .7s ease,transform .7s ease}
+.fade.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.fade{opacity:1;transform:none;transition:none}}
 
-/* PDF / print */
 @media print{
-  @page{size:A4;margin:16mm 14mm}
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body{font-size:11.5pt}
-  .wrap{width:100%}
-  .noprint,.call{display:none!important}
-  section{padding:16px 0}
-  .hero{padding:26px 0 10px}
-  h1{font-size:30pt} h2{font-size:18pt} h3{font-size:12.5pt}
-  .card{box-shadow:none;border-radius:12px;padding:14px 16px}
-  .facts div{padding:14px 8px}
-  details{padding:10px 0}
-  summary::after{content:""}
-  .close{padding-bottom:10px}
-  .item,.card,.facts,.quote,details,.split{break-inside:avoid}
-  h2,.head{break-after:avoid}
+  @page{margin:14mm}
+  body{background:#fff}
+  .nav,.row,.call,.phone{display:none!important}
+  .fade{opacity:1!important;transform:none!important}
+  .hero{background:#fff!important;color:var(--ink)!important;padding:0 0 20px!important}
+  .hero::after{display:none}.hero h1,.hero .lede,.meta b{color:var(--ink)!important}.hero h1 em{color:var(--gold)!important}
+  .hero .doc,.meta span{color:var(--muted)!important}.meta{border-color:var(--hair)!important}.meta div{border-color:var(--hair)!important}
+  .hero .doc{margin-top:0}
+  section{padding:24px 0!important;break-inside:auto}
+  .tl,.pane,.comm>div,.item,.faq details,.quote,.facts>div{break-inside:avoid}
+  .trust{background:#fff!important;color:var(--ink)!important;box-shadow:inset 0 0 0 1px var(--hair)}
+  .trust *{color:var(--ink)!important}.logos img{filter:invert(1)!important}
+  .faq details>p{display:block}
+  .printonly{display:block!important}
+}
+.printonly{display:none}
+
+/* 11-19 Benas: brand colour moments through the page (hero, the 'after you pay' band, trusted card, closing band) */
+:root{--olive:#1E2812;--olive-2:#3A4519;--leaf:#4E6B2A}
+.kicker{color:var(--leaf)}
+.btn.dark{background:var(--olive);color:var(--cream)}
+.band{position:relative;color:var(--cream);border-top:0;overflow:hidden;
+  background:radial-gradient(80% 70% at 90% 0%,rgba(255,211,92,.14),transparent 60%),radial-gradient(70% 60% at 0% 100%,rgba(176,94,72,.22),transparent 65%),
+             linear-gradient(165deg,#10150B 0%,#24301A 40%,#4E5A22 80%,#6E6A2E 100%)}
+.band::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.06;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.band .wrap{position:relative;z-index:1}
+.band h2{color:var(--cream)}.band h2 em,.band em{color:var(--gold-hi)}
+.band .kicker{color:rgba(247,245,236,.62)}.band .lede{color:rgba(247,245,236,.84)}
+.band .tl{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.band .tl h3{color:var(--cream)}.band .tl p{color:rgba(247,245,236,.78)}.band .tl .when{color:var(--gold-hi)}
+.band + section{border-top:0}
+.trust{background:linear-gradient(160deg,#24301A,#1A2112 60%,#3A4519)}
+.close.band .call,.close.band .fine{color:rgba(247,245,236,.66)}.close.band .call a,.close.band .fine a{color:var(--cream)}
+.close.band .btn.dark{background:var(--cream);color:#191a12}.close.band .btn.line{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);color:var(--cream)}
+@media print{.band{background:#fff!important;color:var(--ink)!important}.band::after{display:none}.band h2,.band h3,.band p,.band .tl h3,.band .tl p,.band .lede{color:var(--ink)!important}.band em,.band .tl .when{color:var(--gold)!important}.band .tl{background:#fff!important;border-color:var(--hair)!important}}
+
+/* 11-19 Benas: no hard cream->olive edges. Olive moments are rounded panels inset in the page, with soft shadows; hero gets rounded bottom corners. */
+.hero{border-radius:0 0 clamp(28px,4vw,48px) clamp(28px,4vw,48px)}
+section.band{background:none!important;border-top:0;padding:clamp(28px,4vw,48px) 0;overflow:visible}
+section.band::after{display:none}
+section.band>.wrap{position:relative;overflow:hidden;width:min(1180px,calc(100% - 24px));border-radius:clamp(26px,3.4vw,44px);
+  padding:clamp(48px,7vw,96px) clamp(22px,5vw,70px);color:var(--cream);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 40px 80px -48px rgba(20,23,15,.55);
+  background:radial-gradient(80% 70% at 92% 0%,rgba(255,211,92,.16),transparent 60%),radial-gradient(70% 60% at 0% 100%,rgba(176,94,72,.24),transparent 65%),
+             linear-gradient(160deg,#10150B 0%,#24301A 42%,#4E5A22 82%,#6E6A2E 100%)}
+section.band>.wrap::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.06;border-radius:inherit;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+section.band>.wrap>*{position:relative;z-index:1}
+section.band + section{border-top:0}
+section:has(+ section.band){border-bottom:0}
+/* soft entrance for the panels: rise + scale a touch, slower than the text fades */
+.rise{opacity:0;transform:translateY(24px) scale(.985);transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1.1s cubic-bezier(.16,1,.3,1)}
+.rise.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
+@media print{.hero{border-radius:0}section.band>.wrap{background:#fff!important;box-shadow:inset 0 0 0 1px var(--hair)!important}section.band>.wrap::after{display:none}.rise{opacity:1!important;transform:none!important}}
+
+/* 11-19 PDF polish: no orphan headings, nothing split, nothing invisible */
+@media print{
+  html,body{background:#fff!important}
+  .head,h2,.kicker{break-after:avoid;page-break-after:avoid}
+  .head{break-inside:avoid}
+  section{break-inside:auto}
+  .facts{margin-top:14px!important;box-shadow:none!important;grid-template-columns:repeat(3,1fr)!important}
+  .facts>div+div{border-left:1px solid var(--hair)!important}
+  .facts>div{padding:16px 18px!important}.facts b{font-size:24px!important}
+  .comm{grid-template-columns:repeat(2,1fr)!important}.timeline{grid-template-columns:repeat(2,1fr)!important}
+  .split{grid-template-columns:1fr 1fr!important}
+  section.band>.wrap{break-inside:avoid;padding:28px 26px!important}
+  section.band>.wrap *{color:var(--ink)!important}
+  section.band>.wrap em{color:var(--gold)!important}
+  section.band .kicker{color:var(--muted)!important}
+  .close.band .fine a,.close.band .call a{color:var(--ink)!important;text-decoration:underline}
+  .trust{break-inside:avoid}
+  .meta{grid-template-columns:repeat(4,1fr)!important}
+  footer img{filter:brightness(0)!important}
 }
 
-.draftbar{background:#FFF4C2;color:#5B4700;border-bottom:1px solid #E6D27A;padding:10px 16px;text-align:center;font-size:14px;font-weight:500}
-.draft{background:#FFF4C2;color:#5B4700;border-radius:6px;padding:1px 6px;font-size:13px;font-weight:500;white-space:normal}
-.plans{margin-top:28px;display:grid;grid-template-columns:1.25fr 1fr;gap:14px;align-items:start}
-.plans .card{display:grid;gap:10px}
-.plans .price{font-size:clamp(32px,4vw,44px);font-weight:600;letter-spacing:-.03em;line-height:1;color:var(--ink)}
-.plans .price small{font-size:16px;font-weight:400;color:var(--muted)}
-.plans ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:16px;color:var(--body)}
-.plans .main{border:2px solid var(--gold)}
-.guar{background:var(--gold-soft);border-radius:14px;padding:14px 16px;display:grid;gap:6px}
-.guar b{color:var(--gold-text);font-size:17px}
-.flow5{margin-top:28px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.flow5 .card{padding:16px;display:grid;gap:6px;align-content:start}
-@media (max-width:820px){.plans,.flow5{grid-template-columns:1fr}}
+@media print{#sample .sample{display:block!important}#sample .phone,#sample iframe{display:none!important;height:0!important}#sample{break-before:auto!important}}
+@media print{#sample .head{break-inside:auto!important}#sample .head .kicker,#sample .head h2{break-after:avoid!important;page-break-after:avoid!important}#sample{break-inside:auto!important}#sample .wrap{display:block!important}}
+@media print{#sample{break-before:auto!important}#sample .sample{display:block!important}#sample .sample>*{break-inside:auto!important}#goal{padding-bottom:0!important}#goal .quotes{gap:14px!important}.quote{font-size:20px!important}section{padding:16px 0!important}.hero{padding-bottom:10px!important}}
+@media print{#sample .head .kicker{display:none!important}#sample{break-before:page!important;page-break-before:always!important}}
+@media(min-width:1000px){.comm>div:last-child:nth-child(3n+2){grid-column:span 2}}
+@media(min-width:760px) and (max-width:999px){.comm>div:last-child:nth-child(2n+1){grid-column:span 2}}
+
+.draftbar{background:#FFF4C2;color:#5B4700;border-bottom:1px solid #E6D27A;padding:10px 16px;text-align:center;font:500 14px/1.4 var(--sans)}
+.draft{background:#FFF4C2;color:#5B4700;border-radius:6px;padding:1px 7px;font:500 13px/1.5 var(--sans)}
+.plans{display:grid;gap:16px;grid-template-columns:1fr;align-items:start}
+@media(min-width:860px){.plans{grid-template-columns:1.35fr 1fr}}
+.plan{background:var(--card);border:1px solid var(--hair);border-radius:22px;padding:30px;display:grid;gap:14px}
+.plan.main{border:2px solid var(--gold);box-shadow:0 24px 50px -34px rgba(20,23,15,.45)}
+.plan .price{font:340 clamp(40px,5vw,60px)/1 var(--serif);letter-spacing:-.03em;color:var(--ink)}
+.plan .price small{font:400 16px/1 var(--sans);color:var(--muted);letter-spacing:0}
+.plan ul{margin:0;padding:0;list-style:none}
+.plan li{padding:11px 0;border-top:1px solid var(--hair);font-size:16px}
+.guar{background:#1E2812;color:var(--cream);border-radius:16px;padding:20px 22px;display:grid;gap:8px}
+.guar b{font:400 22px/1.2 var(--serif);color:var(--gold-hi)}
+.guar p{font-size:15.5px;color:rgba(247,245,236,.9)}
+.flow5{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:860px){.flow5{grid-template-columns:repeat(5,1fr)}}
 </style>
+
 </head>
 <body>
-<div class="draftbar noprint">INTERNAL DRAFT for Simas and Benas. Not sent to Dr. Judy. Prices and yellow notes are not agreed. No payment link on purpose.</div>
-<nav class="nav" aria-label="Scope">
-  <div class="wrap">
-    <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
-    <a class="btn ghost sm site-btn noprint" href="https://bejucreative.digital/">Visit our website</a>
-    <a class="btn primary sm noprint" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
-  </div>
-</nav>
+<div class="draftbar">INTERNAL DRAFT for Simas and Benas. Not sent to Dr. Judy. Yellow notes are not agreed. No payment button on purpose.</div>
 <header class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Scope of work</p>
-    <h1 style="margin-top:14px">Your growth team for <span class="gold">Dr. Judy WTFreud!</span></h1>
-    <p class="lede">Built around one goal: your videos bringing people to your programs, your book and your practice, without you managing any of it.</p>
-    <div class="btns noprint">
-      <a class="btn primary" href="#start">See the next step</a>
-    </div>
-    <div class="meta">
-      <span>Prepared for <b>Dr. Judy Rosenberg, Psychological Healing Center</b></span>
-      <span>Scope <b>BEJ-2026-0123</b></span>
-      <span>Issued <b>20 Nov 2026</b></span>
-      <span>Valid until <b>4 Dec 2026</b></span>
-      <span>Your contact <b>Benas, Co-founder</b></span>
-    </div>
+ <div class="wrap">
+  <nav class="nav" aria-label="Scope">
+   <a href="https://bejucreative.digital/" aria-label="Beju Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="Beju Creative" width="40" height="24" style="filter:brightness(0) invert(1)"></a>
+   <span class="links"><a href="#plans">Your plan</a><a href="#get">In detail</a><a href="#after">After you pay</a><a href="#faq">Questions</a><a href="https://bejucreative.digital/">Our website</a></span>
+   <a class="btn cream" href="#start">Next step</a>
+  </nav>
+  <p class="doc">Scope of work · BEJ-2026-0123</p>
+  <h1>Your sales engine, built for <em>Dr. Judy WTFreud!</em></h1>
+  <p class="lede">Built around one goal: your videos bringing people to your programs, your book and your practice, without you managing any of it.</p>
+  <div class="row"><a class="btn cream" href="#plans">See your plan</a></div>
+  <div class="meta">
+   <div><span>Prepared for</span><b>Dr. Judy Rosenberg, Psychological Healing Center</b></div>
+   <div><span>Your contact</span><b>Benas, Co-founder</b></div>
+   <div><span>Issued</span><b>21 Nov 2026</b></div>
+   <div><span>Valid until</span><b>5 Dec 2026</b></div>
   </div>
+ </div>
 </header>
 
-<section style="padding-top:0" aria-label="The plan at a glance">
-  <div class="wrap facts">
-    <div><b>One team</b><span>content, sales funnels, websites, email</span></div>
-    <div><b>Posted daily</b><span>TikTok, Instagram, Facebook, YouTube Shorts</span></div>
-    <div><b>Month-to-month</b><span>You own your accounts, your list and every video.</span></div>
+<section class="first"><div class="wrap"><div class="facts">
+    <div class="fade"><b>One team</b><span>content, funnels, emails and websites</span></div>
+    <div class="fade"><b>Posted daily</b><span>TikTok, Instagram, Facebook, YouTube Shorts</span></div>
+    <div class="fade"><b>Month-to-month</b><span>You own your accounts, your list and every video.</span></div>
+</div></div></section>
+
+<section id="goal">
+ <div class="wrap">
+  <div class="head"><span class="kicker">Your goal</span><h2>In your <em>words.</em></h2></div>
+  <div class="quotes">
+    <blockquote class="quote fade">“I want to capture emails. I want automated. I want a lot of spreading to social media.”<cite>From our call</cite></blockquote>
+    <blockquote class="quote fade">“Do you think you could seriously increase my business?”<cite>From our call</cite></blockquote>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="goal">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">Your goal</p><h2 id="goal">In your words</h2></div>
-    <div class="quotes">
-      <p class="quote">“I want to capture emails. I want automated. I want a lot of spreading to social media.”</p>
-      <p class="quote">“Do you think you could seriously increase my business?”</p>
-    </div>
+<section id="how">
+ <div class="wrap">
+  <div class="head"><span class="kicker">How it works</span><h2>From a Short to a <em>program sale.</em></h2>
+  <p class="lede">Your videos already hold the answers people search for. We build the path from watching to buying.</p></div>
+  <div class="flow5">
+    <div class="tl fade"><span class="when">1</span><h3>They see you</h3><p>A Short in your look, with a yellow question that stops the scroll.</p></div>
+    <div class="tl fade"><span class="when">2</span><h3>They comment a word</h3><p>Your page sends them your free chapter by message, automatically.</p></div>
+    <div class="tl fade"><span class="when">3</span><h3>They leave an email</h3><p>Your list grows every day, and it stays yours.</p></div>
+    <div class="tl fade"><span class="when">4</span><h3>Emails follow up</h3><p>A welcome series, then weekly emails. We write them, you approve them.</p></div>
+    <div class="tl fade"><span class="when">5</span><h3>They pick a program</h3><p>Healing Narcissistic Wounds, Healing Childhood Wounds, or both.</p></div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="how">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">How it works</p><h2 id="how">From a Short to a <span class="gold">program sale</span></h2>
-      <p class="lede">Your videos already hold the answers people search for. We build the path from watching to buying.</p></div>
-    <div class="flow5">
-      <div class="card"><span class="tag">1 · Find</span><h3>They see you</h3><p class="small">Shorts in your look, with a yellow question that stops the scroll.</p></div>
-      <div class="card"><span class="tag">2 · Ask</span><h3>They comment a word</h3><p class="small">Your page sends them your free chapter by message, automatically.</p></div>
-      <div class="card"><span class="tag">3 · Join</span><h3>They leave an email</h3><p class="small">Your list grows every day, and it stays yours.</p></div>
-      <div class="card"><span class="tag">4 · Trust</span><h3>Emails follow up</h3><p class="small">A welcome series, then weekly emails. We write them, you approve them.</p></div>
-      <div class="card"><span class="tag">5 · Buy</span><h3>They pick a program</h3><p class="small">Healing Narcissistic Wounds, Healing Childhood Wounds, or both.</p></div>
-    </div>
+<section>
+ <div class="wrap">
+  <div class="head"><span class="kicker">How we work</span><h2>Half editing. Half <em>content thinking.</em></h2>
+  <p class="lede">Half of our work is the edit itself. The other half is deciding what gets made, how it opens, and where it sends people.</p></div>
+  <div class="split">
+   <div class="pane fade"><h3><small>Content engine</small>What gets made</h3><ul>
+    <li><b>Hooks</b><span>A yellow question first, in your words, so people stay for the answer.</span></li>
+    <li><b>Picks</b><span>Your juiciest lines, the ones people relate to.</span></li>
+    <li><b>The path</b><span>Every video leads to your free chapter, your list and your programs.</span></li></ul></div>
+   <div class="pane fade"><h3><small>Editing</small>How it looks</h3><ul>
+    <li><b>Cuts and pacing</b><span>Short and to the point. We never cut you off mid-thought.</span></li>
+    <li><b>One look</b><span>Your WTFreud! lettering and colours on every video.</span></li>
+    <li><b>The same close</b><span>healingnarcissisticwounds.com, “Call now for information” and 310-651-7644.</span></li></ul></div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="engine">
-  <div class="wrap">
-    <div class="head">
-      <p class="eyebrow">How we work</p>
-      <h2 id="engine">50% editing. <span class="gold">50% content engine.</span></h2>
-      <p class="lede">We're not just video editors. Half of our work is deciding what gets made, how it opens, and why your audience will stay.</p>
-    </div>
-    <div class="split2">
-      <div class="card half"><b class="big">50%</b><h3>Content engine</h3><p>Hooks, picks, structure, graphics and testing.</p></div>
-      <div class="card half"><b class="big">50%</b><h3>Editing</h3><p>Cuts, captions, sound and motion.</p></div>
-    </div>
-    <div class="grid4">
-      <div class="card"><span class="tag">Hooks</span><h3>A question first</h3><p class="small">Every Short opens on a yellow question in your words, so people stay for the answer.</p></div>
-      <div class="card"><span class="tag">Picks</span><h3>Your juiciest lines</h3><p class="small">We pick the parts people relate to, and we never cut you off mid-thought.</p></div>
-      <div class="card"><span class="tag">Brand</span><h3>One look, every video</h3><p class="small">Your WTFreud! lettering and colours, so people recognise you at once.</p></div>
-      <div class="card"><span class="tag">End card</span><h3>Always the same close</h3><p class="small">healingnarcissisticwounds.com, “Call now for information” and 310-651-7644.</p></div>
-    </div>
+<section id="plans">
+ <div class="wrap">
+  <div class="head"><span class="kicker">Your plan</span><h2>Two ways to <em>work with us.</em></h2></div>
+  <div class="plans">
+   <div class="plan main fade">
+    <span class="kicker">Recommended</span>
+    <h3 style="font-size:30px">Sales Engine: Full Business</h3>
+    <div class="price">$2,500 <small>a month</small></div>
+    <p><span class="draft">Price not agreed: Benas $2,500 · Simas about $2,000</span></p>
+    <p>We run the marketing for everything you do, as one team.</p>
+    <ul>
+     <li>60–90 Shorts a month across your businesses, more when needed, posted daily</li>
+     <li>Keyword funnels for both programs, with your free chapter as the gift</li>
+     <li>Your email list, a welcome series and weekly emails, written for you</li>
+     <li>The February book launch: waitlist, first chapter, launch content</li>
+     <li>Your show: two long episodes a month, edited, posted and announced</li>
+     <li>Your websites tuned to sell, and free-consultation booking</li>
+     <li>Webinars set up, run and followed up</li>
+     <li>The Gift House: content and an inquiry page for scouts</li>
+     <li>A weekly report and regular calls with us</li>
+    </ul>
+    <div class="guar"><b>Our guarantee</b><p>If your funnel brings no sale of a program within 30 days of going live, you choose: one more month free, or a refund of your first month. Your part: approve posts within 48 hours and keep your checkout working.</p><p><span class="draft">Refund half not agreed: Simas's 11-17 rule is no money back.</span></p></div>
+   </div>
+   <div class="plan fade">
+    <span class="kicker">Small start</span>
+    <h3>Lead Magnet Test</h3>
+    <div class="price" style="font-size:40px">$600 <small>a month</small></div>
+    <ul>
+     <li>One keyword funnel for Healing Narcissistic Wounds</li>
+     <li>Automated posting of your Shorts</li>
+     <li>Your 30 Shorts plan stays separate, at $300 a month</li>
+     <li>No guarantee on this plan</li>
+    </ul>
+   </div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="plans">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">Two ways to work with us</p><h2 id="plans">Choose your plan</h2></div>
-    <div class="plans">
-      <div class="card main">
-        <span class="tag">Recommended</span>
-        <h3>Sales Engine: Full Business</h3>
-        <div class="price">$2,500 <small>a month</small> <span class="draft">Benas $2,500 · Simas ~$2,000</span></div>
-        <p class="small">We run the marketing for everything you do, as one team.</p>
-        <ul>
-          <li>Shorts for every business, in your look, posted daily <span class="draft">cap per month to agree</span></li>
-          <li>Your show: two long episodes a month, edited, posted and announced</li>
-          <li>Sales funnels for both programs: comment-to-message, free chapter, email capture</li>
-          <li>Email follow-up: a welcome series and weekly emails, written by us, approved by you</li>
-          <li>Book launch for February: a waitlist, the first chapter as a gift, launch content</li>
-          <li>Your websites tuned to sell <span class="draft">pages per month to agree</span></li>
-          <li>Webinars: set up, run and followed up <span class="draft">one every two months</span></li>
-          <li>The Gift House: content and an inquiry page for location scouts</li>
-          <li>A weekly report and a call with us twice a month</li>
-        </ul>
-        <div class="guar"><b>Our guarantee</b><p class="small">If your funnel brings no sale of your $395 or $497 program within 30 days of going live, you choose: we keep working free for up to 2 more months, or we refund your first month. Your side: approve posts within 48 hours and keep your checkout working.</p><p class="small"><span class="draft">Refund half not agreed: Simas's 11-17 rule is no money back. Free months are agreed by both sides.</span></p></div>
-      </div>
-      <div class="card">
-        <span class="tag">Small start</span>
-        <h3>Lead Magnet Test</h3>
-        <div class="price">$600 <small>a month</small></div>
-        <p class="small">One funnel for one program, plus posting.</p>
-        <ul>
-          <li>One lead-magnet funnel for Healing Narcissistic Wounds</li>
-          <li>Automated posting of your Shorts</li>
-          <li>Your 30 Shorts plan stays separate, at $300 a month</li>
-          <li>No show, book launch, websites, webinars or email writing</li>
-        </ul>
-        <p class="small">No guarantee on this plan.</p>
-      </div>
-    </div>
+<section id="get">
+ <div class="wrap">
+  <div class="head"><span class="kicker">In detail</span><h2>What each part is, and what it <em>does for you.</em></h2>
+  <p class="lede">Everything below is in Sales Engine: Full Business. The Lead Magnet Test holds the keyword funnel, the free chapter, email capture and posting.</p></div>
+  <div class="list">
+    <div class="item fade"><h3>Shorts in your locked look</h3><p>What it is: your best lines as short videos. Each opens on a yellow question, carries your WTFreud! lettering, and closes on the same end card. Why it matters: people recognise you in one second, and every video ends on your website and phone number.</p></div>
+    <div class="item fade"><h3>Daily posting on four platforms</h3><p>What it is: we post for you on TikTok, Instagram, Facebook and YouTube Shorts, with a title, description and hashtags on each one. Why it matters: your videos reach people every day, and nobody on your side has to post.</p></div>
+    <div class="item fade"><h3>The keyword funnel</h3><p>What it is: each video invites viewers to comment one word, for example HEAL. Your page then sends them a private message with your free chapter, automatically. Why it matters: a viewer becomes a contact in seconds, while they still feel what you said.</p></div>
+    <div class="item fade"><h3>Your free chapter as the gift</h3><p>What it is: the free sample chapter your site already offers, and the first chapter of the new book for Healing Childhood Wounds. Why it matters: people try your work first, so the step to a program feels smaller.</p></div>
+    <div class="item fade"><h3>Email capture and your list</h3><p>What it is: everyone who takes the gift leaves an email address, saved in a list that belongs to you. Why it matters: platforms can change overnight. Your list is the one audience you own.</p></div>
+    <div class="item fade"><h3>Email follow-up, written for you</h3><p>What it is: a welcome series for new contacts, then one email a week. We write them in your voice, and you approve each one. Why it matters: most people don't buy on day one. The emails stay with them until they're ready.</p></div>
+    <div class="item fade"><h3>Free-consultation booking</h3><p>What it is: a calendar on your consultation page, so people pick a time themselves and answer a few questions first. Why it matters: you told us you can't manage the requests. This way only booked calls reach you.</p></div>
+    <div class="item fade"><h3>Websites tuned to sell</h3><p>What it is: one clear button per page, lighter opening videos, reviews where people decide, and an email sign-up on every site. Why it matters: more of the visitors you already have take the next step.</p></div>
+    <div class="item fade"><h3>Book launch for February</h3><p>What it is: a waitlist page, the first chapter as a gift, and a run of launch videos and emails for Healing Childhood Wounds. Why it matters: the book opens to people who are already waiting for it.</p></div>
+    <div class="item fade"><h3>Your show, twice a month</h3><p>What it is: we edit each long episode, post it, and announce it to your list and your pages. Why it matters: each episode also gives us a month of new Shorts.</p></div>
+    <div class="item fade"><h3>Webinars</h3><p>What it is: we set up the sign-up page, the reminders and the room, run the tech on the day, and send the follow-up emails. Why it matters: you teach live to people who chose to be there.</p></div>
+    <div class="item fade"><h3>The Gift House</h3><p>What it is: short videos of the house once we have footage, plus an inquiry form with what scouts need to know. Why it matters: location scouts can send a request at any hour, not only by phone.</p></div>
+    <div class="item fade"><h3>A weekly report</h3><p>What it is: one short page: what we posted, which videos did best, how many new emails came in, and what we do next. Why it matters: you always see what your money is doing.</p></div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="detail">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">In detail</p><h2 id="detail">What each part is, and what it does for you</h2>
-      <p class="lede">Everything below is in Sales Engine: Full Business. The Lead Magnet Test holds the keyword funnel, the free chapter, email capture and posting.</p></div>
-    <div class="list">
-      <div class="item"><h3>Shorts in your locked look</h3><p>What it is: your best lines cut into short videos, each with a yellow question first, your WTFreud! lettering, and the same end card. Why it matters: people recognise you in one second, and every video ends on your website and phone number.</p></div>
-      <div class="item"><h3>Daily posting on four platforms</h3><p>What it is: we post for you on TikTok, Instagram, Facebook and YouTube Shorts, with a title, description and hashtags on each one. Why it matters: your videos reach people every day without you or June doing the posting.</p></div>
-      <div class="item"><h3>The keyword funnel</h3><p>What it is: each video invites viewers to comment one word, for example HEAL. Your page then sends them a private message with your free chapter, automatically. Why it matters: a viewer becomes a contact in seconds, while they still feel what you said.</p></div>
-      <div class="item"><h3>Your free chapter as the gift</h3><p>What it is: we use the free sample chapter your site already offers, and the first chapter of the new book for Healing Childhood Wounds. Why it matters: people try your work before they buy, so the step to a $395 or $497 program feels smaller.</p></div>
-      <div class="item"><h3>Email capture and your list</h3><p>What it is: everyone who takes the gift leaves an email address, saved in a list that belongs to you. Why it matters: social platforms can change overnight. Your list is the one audience you own.</p></div>
-      <div class="item"><h3>Email follow-up, written for you</h3><p>What it is: a welcome series for new contacts, then one email a week. We write them in your voice, and you approve each one. Why it matters: most people don't buy on day one. The emails stay with them until they're ready.</p></div>
-      <div class="item"><h3>Free-consultation booking</h3><p>What it is: a calendar on your consultation page, so people pick a time themselves, with a few questions first. Why it matters: you told us you can't manage the requests. This way only booked, serious calls reach you.</p></div>
-      <div class="item"><h3>Websites tuned to sell</h3><p>What it is: one clear button per page, lighter opening videos, reviews where people decide, and an email sign-up on every site. Why it matters: more of the visitors you already get take the next step.</p></div>
-      <div class="item"><h3>Book launch for February</h3><p>What it is: a waitlist page, the first chapter as a gift, and a run of launch videos and emails for Healing Childhood Wounds. Why it matters: the book opens to people who are already waiting for it.</p></div>
-      <div class="item"><h3>Your show, twice a month</h3><p>What it is: we edit each long episode, post it, and announce it to your list and your pages. Why it matters: each episode also gives us a month of new Shorts.</p></div>
-      <div class="item"><h3>Webinars</h3><p>What it is: we set up the sign-up page, the reminders and the room, run the tech on the day, and send the follow-up emails. Why it matters: you teach live to people who chose to be there, and they hear about your programs at the end.</p></div>
-      <div class="item"><h3>The Gift House</h3><p>What it is: short videos of the house once we have footage, plus an inquiry form with what scouts need to know. Why it matters: location scouts can send a request at any hour, not only by phone.</p></div>
-      <div class="item"><h3>A weekly report</h3><p>What it is: one short page: what we posted, which videos did best, how many new emails came in, and what we do next. Why it matters: you always see what your money is doing.</p></div>
-    </div>
+<section id="sites">
+ <div class="wrap">
+  <div class="head"><span class="kicker">What we already found</span><h2>Your four <em>websites.</em></h2></div>
+  <div class="list">
+    <div class="item fade"><h3>healingnarcissisticwounds.com</h3><p>Strong proof and a free chapter already. About eight buttons compete for the click, and the free consultation has no calendar. We set one clear path and add booking.</p></div>
+    <div class="item fade"><h3>healingchildhoodwounds.com</h3><p>The page title still says “Healing Narcissistic Abuse”, the opening video is heavy, and there are no reviews or email sign-up. We fix all four and add the February book.</p></div>
+    <div class="item fade"><h3>psychologicalhealingcenter.com</h3><p>Twenty-five menu links, and every path ends in “we'll call you”. We simplify it and add online booking.</p></div>
+    <div class="item fade"><h3>thegifthousela.com</h3><p>The first photo is a portrait stretched wide, and scouts can only phone. We use your new living-room photo and add an inquiry form.</p></div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="sites">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">What we already found</p><h2 id="sites">Your four websites</h2></div>
-    <div class="list">
-      <div class="item"><h3>healingnarcissisticwounds.com</h3><p>Strong proof and a free chapter already. About eight buttons compete for the click, and the free consultation has no calendar. We set one clear path and add booking.</p></div>
-      <div class="item"><h3>healingchildhoodwounds.com</h3><p>The page title still says “Healing Narcissistic Abuse”, the opening video is heavy, and there are no reviews or email sign-up. We fix all four and add the February book.</p></div>
-      <div class="item"><h3>psychologicalhealingcenter.com</h3><p>Twenty-five menu links, and every path ends in “we'll call you”. We simplify it and add online booking.</p></div>
-      <div class="item"><h3>thegifthousela.com</h3><p>The first photo is a portrait stretched wide, and scouts can only phone. We use your new living-room photo and add an inquiry form.</p></div>
-    </div>
+<section id="after">
+ <div class="wrap">
+  <div class="head"><span class="kicker">After you pay</span><h2>We start <em>the same day.</em></h2>
+  <p class="lede">No kickoff meetings and no waiting. This is what happens next.</p></div>
+  <div class="timeline">
+    <div class="tl fade"><span class="when">1</span><h3>Your onboarding form</h3><p>Right after you pay, a two-minute form opens: your accounts, your brand files, and where each video should send people. Benas also emails you the link.</p></div>
+    <div class="tl fade"><span class="when">2</span><h3>We connect with Joriz</h3><p>The same day, she shows us your accounts once. From there we post, and she keeps the parts you choose.</p></div>
+    <div class="tl fade"><span class="when">3</span><h3>Your first funnel, for approval</h3><p>The keyword funnel for Healing Narcissistic Wounds comes to you first. Once you like it, it goes live. <span class="draft">timing to agree: Benas said 24–48 hours on the call</span></p></div>
+    <div class="tl fade"><span class="when">4</span><h3>Daily posts, weekly report</h3><p>Videos go out every day. The other funnels, emails and site fixes follow in order, and you get a report each week.</p></div>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="steps">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">Getting started</p><h2 id="steps">Three steps, then it runs</h2></div>
-    <div class="grid3">
-      <div class="card step"><span class="num">1</span><h3>Pay the first month</h3><p class="small">By card or by invoice. Paying is your yes. No signature needed.</p></div>
-      <div class="card step"><span class="num">2</span><h3>Connect us with June</h3><p class="small">She shows us your accounts once. From there we post, and she can keep the parts you choose.</p></div>
-      <div class="card step"><span class="num">3</span><h3>Your first funnel goes live</h3><p class="small">We start with Healing Narcissistic Wounds, then add the rest in order.</p></div>
-    </div>
+<section>
+ <div class="wrap">
+  <div class="head"><span class="kicker">Working together</span><h2>Communication <em>and approvals.</em></h2></div>
+  <div class="comm">
+    <div class="fade"><h3>Your account leads</h3><p>Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
+    <div class="fade"><h3>Replies within one hour</h3><p>Questions get an answer fast, every day of the week.</p></div>
+    <div class="fade"><h3>Approvals</h3><p>You approve the first videos in each new style, and every email before it goes out.</p></div>
+    <div class="fade"><h3>Revisions</h3><p>Unlimited. Send your notes, and we send a new version.</p></div>
+    <div class="fade"><h3>Your files</h3><p>Everything lands in your own Drive folder, sorted by business.</p></div>
   </div>
+ </div>
+</section>
+<section>
+ <div class="wrap">
+  <div class="trust rise">
+   <div><span class="kicker">Trusted by</span>
+    <div class="logos">
+     <a href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="https://bejucreative.digital/assets/based-wordmark.svg" alt="BASED" width="150" height="34"><span class="tt">View on TikTok ↗</span></a>
+     <a href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="wm">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
+    </div></div>
+   <div class="tnums"><div><b>50+</b><span>clients</span></div><div><b>97%</b><span>stay after the first month</span></div></div>
+  </div>
+ </div>
 </section>
 
-<section aria-labelledby="faq">
-  <div class="wrap cols">
-    <div class="head"><p class="eyebrow">Good to know</p><h2 id="faq">Questions</h2></div>
-    <div>
-      <details open><summary>Who owns my accounts and my email list?</summary><p>You do. Your accounts, your list and your content stay yours. We run them for you.</p></details>
-      <details><summary>Do I have to approve everything?</summary><p>You approve the first videos in each new style and every email before it goes out. The rest follows what you approved.</p></details>
-      <details><summary>What happens with June?</summary><p>That's your call. We can work alongside her, or take over the posting fully.</p></details>
-      <details><summary>What if I don't like a video?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
-      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work.</p></details>
-    </div>
+<section id="faq">
+ <div class="wrap">
+  <div class="head"><span class="kicker">Good to know</span><h2><em>Questions.</em></h2></div>
+  <div class="faq">
+    <details open><summary>Who owns my accounts and my email list?</summary><p>You do. Your accounts, your list and your content stay yours. We run them for you.</p></details>
+    <details><summary>Do I have to approve everything?</summary><p>You approve the first videos in each new style and every email before it goes out. The rest follows what you approved.</p></details>
+    <details><summary>What happens with my assistant?</summary><p>That's your call. We can work alongside her, or take over the posting fully.</p></details>
+    <details><summary>What if I don't like a video?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
+    <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work.</p></details>
   </div>
+ </div>
 </section>
 
-<section aria-labelledby="comm">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">Working together</p><h2 id="comm">Communication and approvals</h2></div>
-    <div class="comm">
-      <div class="card"><h3>Your account leads</h3><p class="small">Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
-      <div class="card"><h3>Replies within one hour</h3><p class="small">Questions get an answer fast, every day of the week.</p></div>
-      <div class="card"><h3>A weekly report</h3><p class="small">What we posted, what worked, new emails captured, and what comes next.</p></div>
-      <div class="card"><h3>Revisions</h3><p class="small">Unlimited. Send your notes, and we send a new version.</p></div>
-      <div class="card"><h3>Your files</h3><p class="small">Everything lands in your own Drive folder, sorted by business.</p></div>
-    </div>
-  </div>
-</section>
-<section class="proof" aria-label="Trusted by">
-  <div class="wrap"><div class="proof-card">
-    <p class="eyebrow">Trusted by</p>
-    <div class="proof-logos">
-      <a class="proof-item" href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="https://bejucreative.digital/assets/based-wordmark.svg" alt="BASED" width="211" height="48"><span class="tt">View on TikTok ↗</span></a>
-      <a class="proof-item" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="proof-wordmark">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
-    </div>
-    <div class="proof-nums">
-      <div><b>50+</b><span>clients</span></div>
-      <div><b>97%</b><span>stay after the first month</span></div>
-    </div>
-  </div></div>
+<section class="close band" id="start">
+ <div class="wrap rise">
+  <span class="kicker">Next step</span>
+  <h2 style="margin-top:14px">Ready when <em>you are.</em></h2>
+  <p class="lede">Pick your plan and pay the first month. We start the same day.</p>
+  <p style="margin-top:14px"><span class="draft">Pay button comes when the price is final and the Stripe link exists.</span></p>
+  <div class="row"><a class="btn line" href="mailto:ben@getbejucreative.com?subject=Invoice%20for%20Psychological%20Healing%20Center%20(BEJ-2026-0123)">Request an invoice</a></div>
+  <p class="call">Rather talk it through first? <a href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a></p>
+  <p class="fine">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>. Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe.</p>
+ </div>
 </section>
 
-<section class="close" id="start" aria-labelledby="ready">
-  <div class="wrap">
-    <div class="card">
-      <p class="eyebrow">Next step</p>
-      <h2 id="ready" style="margin-top:12px">Ready when you are</h2>
-      <p class="lede">Pick your plan and pay the first month. We start with your first funnel the same week.</p>
-      <p class="small"><span class="draft">Pay button comes when the price is final and the Stripe link exists. Terms: monthly, cancel any time, no discount (Benas confirming).</span></p>
-      <div class="btns noprint">
-        <a class="btn ghost" href="mailto:ben@getbejucreative.com?subject=Invoice%20for%20Psychological%20Healing%20Center%20(BEJ-2026-0123)">Request an invoice</a>
-      </div>
-      <div class="call">
-        <p>Rather talk it through first?</p>
-        <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
-      </div>
-      <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
-      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
-    </div>
-  </div>
-</section>
-<footer><div class="wrap"><span><img class="foot-mark" src="https://bejucreative.digital/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Questions? Reply to Benas's email.</span></div></footer>
+<footer><div class="wrap"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="Beju Creative" width="34" height="20"><span>Scope BEJ-2026-0123 · Questions? Reply to Benas's email.</span><span><a href="https://bejucreative.digital/">bejucreative.digital</a> · <a href="https://bejucreative.digital/terms.html">Terms</a></span></div></footer>
 <script>
-const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
-if (location.search.includes("print")) openAll();
-addEventListener("beforeprint", openAll);
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{rootMargin:"0px 0px -8% 0px"});
+document.querySelectorAll(".fade,.rise").forEach(el=>io.observe(el));
+const openAll=()=>document.querySelectorAll("details").forEach(d=>d.open=true);
+if(location.search.includes("print")){openAll();document.querySelectorAll(".fade,.rise").forEach(el=>el.classList.add("in"))}
+addEventListener("beforeprint",openAll);
 </script>
 </body>
 </html>
