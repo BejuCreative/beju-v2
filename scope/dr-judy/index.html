@@ -218,6 +218,21 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .feat dd{margin:2px 0 0;font-size:16px;color:var(--body);line-height:1.55}
 @media (max-width:820px){.feats{grid-template-columns:1fr}}
 @media print{.feat{break-inside:avoid}}
+
+.cmpwrap{overflow-x:auto;margin-top:8px}
+.cmp{width:100%;min-width:680px;border-collapse:separate;border-spacing:0;font-size:16px}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:16px 18px;border-bottom:1px solid var(--hair)}
+.cmp thead th{vertical-align:bottom;border-bottom:2px solid var(--ink)}
+.cmp thead th b{display:block;font-size:20px;font-weight:600;color:var(--ink);margin-top:6px}
+.cmp thead .pr{display:block;font-size:34px;font-weight:600;letter-spacing:-.03em;color:var(--ink);line-height:1.1;margin:4px 0}
+.cmp thead .pr small{font-size:15px;font-weight:400;color:var(--muted);letter-spacing:0}
+.cmp thead th.main,.cmp td.yes{background:var(--gold-soft)}
+.cmp tbody th{width:38%;font-weight:400}
+.cmp tbody th b{display:block;color:var(--ink);font-weight:600;font-size:17px}
+.cmp tbody th span{display:block;color:var(--body);font-size:15px;margin-top:4px;line-height:1.5}
+.cmp td{color:var(--ink);font-weight:500;width:31%}
+.cmp td.yes{color:#0A5C33}
+.cmp tr.grp th{background:transparent;padding:26px 18px 8px;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text);border-bottom:1px solid var(--hair-2)}
 </style>
 </head>
 <body>
@@ -235,7 +250,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
     <h1 style="margin-top:14px">Your growth team for <span class="gold">Dr. Judy WTFreud!</span></h1>
     <p class="lede">Built around one goal: your videos bringing people to your programs, your book and your practice, without you managing any of it.</p>
     <div class="btns noprint">
-      <a class="btn primary" href="#plans">See your plan</a>
+      <a class="btn primary" href="#plans-sec">See your plan</a>
     </div>
     <div class="meta">
       <span>Prepared for <b>Dr. Judy Rosenberg, Psychological Healing Center</b></span>
@@ -299,107 +314,37 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   </div>
 </section>
 
-<section aria-labelledby="plans">
+<section aria-labelledby="plans" id="plans-sec">
   <div class="wrap">
-    <div class="head"><p class="eyebrow">Two ways to work with us</p><h2 id="plans">Choose your plan</h2></div>
-    <div class="plans">
-      <div class="card main">
-        <span class="tag">Recommended</span>
-        <h3>Sales Engine: Full Business</h3>
-        <div class="price">$2,500 <small>a month</small> <span class="draft">not agreed: Benas $2,500 · Simas about $2,000</span></div>
-        <p class="small">We run the marketing for everything you do, as one team.</p>
-        <ul>
-          <li>60–90 Shorts a month across your businesses, more when needed, posted daily</li>
-          <li>Your show: two long episodes a month, edited, posted and announced</li>
-          <li>Sales funnels for both programs: comment-to-message, free chapter, email capture</li>
-          <li>Email follow-up: a welcome series and weekly emails, written by us, approved by you</li>
-          <li>Book launch for February: a waitlist, the first chapter as a gift, launch content</li>
-          <li>Your websites tuned to sell, and free-consultation booking</li>
-          <li>Webinars: set up, run and followed up</li>
-          <li>The Gift House: content and an inquiry page for location scouts</li>
-          <li>A weekly report and regular calls with us</li>
-        </ul>
-        <div class="guar"><b>Our guarantee</b><p class="small">If your funnel brings no sale of your $395 or $497 program within 30 days of going live, you choose: one more month free, or a refund of your first month. Your part: approve posts within 48 hours and keep your checkout working.</p><p class="small"><span class="draft">Refund half not agreed: Simas's 11-17 rule is no money back.</span></p></div>
-      </div>
-      <div class="card">
-        <span class="tag">Small start</span>
-        <h3>Lead Magnet Test</h3>
-        <div class="price">$600 <small>a month</small></div>
-        <p class="small">One funnel for one program, plus posting.</p>
-        <ul>
-          <li>One lead-magnet funnel for Healing Narcissistic Wounds</li>
-          <li>Automated posting of your Shorts</li>
-          <li>Your 30 Shorts plan stays separate, at $300 a month</li>
-          <li>No show, book launch, websites, webinars or email writing</li>
-        </ul>
-        <p class="small">No guarantee on this plan.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section aria-labelledby="detail">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">In detail</p><h2 id="detail">Everything we do, and what it does <span class="gold">for you</span></h2>
-      <p class="lede">All six parts are in Sales Engine: Full Business. The Lead Magnet Test holds the keyword funnel, the free chapter, your email list and posting.</p></div>
-    <div class="part"><p class="eyebrow">Part 1</p><h3 class="parth">Your videos</h3><p class="small">So people find you, and know it's you in one second.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>Shorts in your locked look</h3><p class="small">Short videos cut from your long ones, 30 to 50 seconds each.</p>
-        <dl><dt>How it works</dt><dd>We watch the full video and pick the lines people relate to most. Each Short opens on a yellow question in your own words, and you start talking at the same moment. Your WTFreud! lettering sits on screen. The video closes on one standard end card: healingnarcissisticwounds.com, “Call now for information” and 310-651-7644.</dd><dt>Your part</dt><dd>You approve the first video in each new style. After that, you only tell us if something feels wrong.</dd><dt>What it does for you</dt><dd>A viewer who sees three of your videos knows they all come from you. That is what a brand is. And every video ends by telling them where to go.</dd></dl></div>
-      <div class="card feat"><h3>Your studio footage first</h3><p class="small">We give priority to your professional recordings, like your interview with Rebecca Zung.</p>
-        <dl><dt>How it works</dt><dd>Studio footage looks sharper and frames you better than a webcam. We cut two or three clips from each studio session and keep you at the centre of the picture.</dd><dt>Your part</dt><dd>Send us any professional recordings you have, or tell us where they are.</dd><dt>What it does for you</dt><dd>The first thing a new viewer judges is the picture. Better footage makes them trust the message faster.</dd></dl></div>
-      <div class="card feat"><h3>Hooks we write and test</h3><p class="small">The first two seconds of each video: the question on screen.</p>
-        <dl><dt>How it works</dt><dd>We write more than one opening for your strongest clips. We watch which ones hold viewers, and we use what we learn in the next videos.</dd><dt>Your part</dt><dd>Nothing. You can always tell us if a question doesn't sound like you.</dd><dt>What it does for you</dt><dd>Most people decide in two seconds whether to keep watching. A good question keeps them for the answer.</dd></dl></div>
-      <div class="card feat"><h3>Daily posting on four platforms</h3><p class="small">We post for you on TikTok, Instagram, Facebook and YouTube Shorts.</p>
-        <dl><dt>How it works</dt><dd>Each post goes out with its own title, description and hashtags. We keep a calendar, so the same video doesn't run twice in a week and your show days get their own posts.</dd><dt>Your part</dt><dd>Give us access once, through your assistant. We never need your passwords in an email.</dd><dt>What it does for you</dt><dd>Your videos reach people every day, and nobody on your side has to post, check or remember.</dd></dl></div>
-    </div>
-    <div class="part"><p class="eyebrow">Part 2</p><h3 class="parth">Your sales funnel</h3><p class="small">So a viewer becomes a contact, and a contact becomes a client.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>The keyword funnel</h3><p class="small">A way for viewers to raise their hand without leaving the video.</p>
-        <dl><dt>How it works</dt><dd>Each video invites people to comment one word, for example HEAL. When someone comments, your page sends them a private message within seconds. The message gives them your free chapter and asks for their email address to send it.</dd><dt>Your part</dt><dd>You choose the word and approve the message once.</dd><dt>What it does for you</dt><dd>People act while they still feel what you said. A day later, most of them have forgotten the video.</dd></dl></div>
-      <div class="card feat"><h3>Your free chapter as the gift</h3><p class="small">The thing people get in exchange for their email address.</p>
-        <dl><dt>How it works</dt><dd>For Healing Narcissistic Wounds we use the free sample chapter your site already offers. For Healing Childhood Wounds we use the first chapter of the new book. Your two-minute quiz can be a second gift later.</dd><dt>Your part</dt><dd>Send us the chapters as files. We design the page they land on.</dd><dt>What it does for you</dt><dd>People try your work before they pay. The step to a $395 or $497 program feels much smaller after that.</dd></dl></div>
-      <div class="card feat"><h3>Your email list</h3><p class="small">A list of everyone who asked for your chapter, with the date and the video they came from.</p>
-        <dl><dt>How it works</dt><dd>Every address goes into one list that belongs to you. We tag each person by interest: narcissistic abuse, childhood wounds, the book, or webinars.</dd><dt>Your part</dt><dd>Nothing. You can see the list at any time.</dd><dt>What it does for you</dt><dd>Platforms change their rules overnight. Your list is the one audience nobody can take away from you.</dd></dl></div>
-      <div class="card feat"><h3>The welcome emails</h3><p class="small">Five short emails that a new contact gets over their first two weeks.</p>
-        <dl><dt>How it works</dt><dd>Email one delivers the chapter. The next ones share your best teaching, a story from your practice, and what your program covers. The last one invites them to the program or a free consultation. We write them in your voice.</dd><dt>Your part</dt><dd>You read and approve each email before it goes live. You approve them once, then they run for every new contact.</dd><dt>What it does for you</dt><dd>Most people don't buy on the first day. These emails stay with them while they decide.</dd></dl></div>
-      <div class="card feat"><h3>One email a week to your whole list</h3><p class="small">A short weekly email in your voice.</p>
-        <dl><dt>How it works</dt><dd>We turn that week's strongest video into a few written lines, add one useful idea, and link to your program, your show or your next webinar.</dd><dt>Your part</dt><dd>You approve it. One reply from you is enough.</dd><dt>What it does for you</dt><dd>People who hear from you every week think of you first when they are ready for help.</dd></dl></div>
-      <div class="card feat"><h3>Free-consultation booking</h3><p class="small">A calendar on your consultation page.</p>
-        <dl><dt>How it works</dt><dd>People pick a time themselves and answer three short questions first. You get the booking with their answers. Reminders go to them automatically.</dd><dt>Your part</dt><dd>Tell us which hours you want open. You told us on the call that you can't manage the requests as they are now.</dd><dt>What it does for you</dt><dd>Only booked calls reach you, and you know why each person is calling before you speak.</dd></dl></div>
-    </div>
-    <div class="part"><p class="eyebrow">Part 3</p><h3 class="parth">Your websites</h3><p class="small">So the visitors you already get take the next step.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>healingnarcissisticwounds.com</h3><p class="small">Your main sales site, and the first funnel we connect.</p>
-        <dl><dt>How it works</dt><dd>It already has strong proof and a free chapter. About eight buttons compete on one page, and the free consultation is a form without a calendar. We set one main path, move the others lower, and add booking.</dd><dt>Your part</dt><dd>You approve the new order of the page before it changes.</dd><dt>What it does for you</dt><dd>A visitor who sees one clear next step is more likely to take it than one who sees eight.</dd></dl></div>
-      <div class="card feat"><h3>healingchildhoodwounds.com</h3><p class="small">The site for your second program and the new book.</p>
-        <dl><dt>How it works</dt><dd>Today the page title and header still say “Healing Narcissistic Abuse”, the opening video is long and heavy, and there are no reviews and no email sign-up. We fix the title, make the opening light and fast, add reviews, and add the first chapter as a gift.</dd><dt>Your part</dt><dd>Send us any reviews or client words you are allowed to share.</dd><dt>What it does for you</dt><dd>This is the page where the book will sell. It should be ready before February.</dd></dl></div>
-      <div class="card feat"><h3>psychologicalhealingcenter.com</h3><p class="small">The site for your practice.</p>
-        <dl><dt>How it works</dt><dd>It has about 25 menu links, and every path ends in “we'll call you”. We shorten the menu and add online booking for your free 15-minute consultation.</dd><dt>Your part</dt><dd>You decide which services stay in the main menu.</dd><dt>What it does for you</dt><dd>New clients can book at any hour, without waiting for a call back.</dd></dl></div>
-      <div class="card feat"><h3>Reviews where people decide</h3><p class="small">Your real reviews, shown next to the buy button.</p>
-        <dl><dt>How it works</dt><dd>Your sites link out to Google and Yelp today. We bring short quotes onto the pages themselves, and we set up a simple way to ask happy clients for a new review.</dd><dt>Your part</dt><dd>You choose which quotes we may show.</dd><dt>What it does for you</dt><dd>People look for proof at the moment they decide. It should be in front of them, not one click away.</dd></dl></div>
-    </div>
-    <div class="part"><p class="eyebrow">Part 4</p><h3 class="parth">Your book, your show and your webinars</h3><p class="small">So your bigger moments reach more people.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>The February book launch</h3><p class="small">A campaign for Healing Childhood Wounds, starting in December.</p>
-        <dl><dt>How it works</dt><dd>First a waitlist page with the first chapter as a gift. Then a run of videos about the book's ideas. Then launch-week emails to everyone on the waitlist.</dd><dt>Your part</dt><dd>Give us the chapter, the cover and your launch date.</dd><dt>What it does for you</dt><dd>On launch day the book opens to people who are already waiting for it.</dd></dl></div>
-      <div class="card feat"><h3>Your show, twice a month</h3><p class="small">Your long episodes, edited and published.</p>
-        <dl><dt>How it works</dt><dd>We edit each episode, post it, and announce it to your list and on your pages. Then we cut that episode into the next weeks' Shorts.</dd><dt>Your part</dt><dd>Record as you do now, and share the file.</dd><dt>What it does for you</dt><dd>One recording becomes a full episode, a dozen Shorts and an email.</dd></dl></div>
-      <div class="card feat"><h3>Webinars</h3><p class="small">Live online classes, run for you from start to finish.</p>
-        <dl><dt>How it works</dt><dd>We build the sign-up page, send the invitations and reminders, set up the room, and run the tech on the day. Afterwards we send the replay and follow-up emails.</dd><dt>Your part</dt><dd>You choose the topic and teach. That's all.</dd><dt>What it does for you</dt><dd>You teach live to people who chose to be there, and they hear about your programs at the end.</dd></dl></div>
-    </div>
-    <div class="part"><p class="eyebrow">Part 5</p><h3 class="parth">The Gift House</h3><p class="small">So scouts can find it and ask about it at any hour.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>Content and an inquiry page</h3><p class="small">Marketing for your home as a film and photo location.</p>
-        <dl><dt>How it works</dt><dd>We replace the first photo with your new living-room picture, add an inquiry form with the details scouts need, and make short videos of the house once we have footage.</dd><dt>Your part</dt><dd>Take the new photos when your carpet arrives, or let someone film a walk-through on a phone.</dd><dt>What it does for you</dt><dd>A scout can send a written request right away, not only phone.</dd></dl></div>
-    </div>
-    <div class="part"><p class="eyebrow">Part 6</p><h3 class="parth">Reports and contact</h3><p class="small">So you always see what your money is doing.</p></div>
-    <div class="feats">
-      <div class="card feat"><h3>A weekly report</h3><p class="small">One short page, every week.</p>
-        <dl><dt>How it works</dt><dd>It shows what we posted, which videos did best, how many new email addresses came in, and what we do next.</dd><dt>Your part</dt><dd>Read it in two minutes. Reply if you want something changed.</dd><dt>What it does for you</dt><dd>You never have to ask what is happening.</dd></dl></div>
-      <div class="card feat"><h3>Regular calls and fast replies</h3><p class="small">Time with us, and answers within the hour.</p>
-        <dl><dt>How it works</dt><dd>Benas and Simas lead your account. We meet on a call to plan the next weeks, and you can write to us any day.</dd><dt>Your part</dt><dd>Tell us what matters most to you that month.</dd><dt>What it does for you</dt><dd>You have one team that knows all your businesses.</dd></dl></div>
-    </div>
+    <div class="head"><p class="eyebrow">Your plan</p><h2 id="plans">What you get, <span class="gold">side by side</span></h2>
+      <p class="lede">Two ways to work with us. Every row says what it is, in one line.</p></div>
+    <div class="cmpwrap"><table class="cmp">
+      <thead><tr><th></th>
+        <th class="main"><span class="tag">Recommended</span><b>Sales Engine: Full Business</b><span class="pr">$2,500 <small>a month</small></span><span class="draft">not agreed: Benas $2,500 · Simas about $2,000</span></th>
+        <th><span class="tag">Small start</span><b>Lead Magnet Test</b><span class="pr">$600 <small>a month</small></span></th></tr></thead>
+      <tbody>
+      <tr class="grp"><th colspan="3">Your videos</th></tr>
+      <tr><th scope="row"><b>Shorts in your look</b><span>Your best lines as 30–50 second videos: a yellow question first, your WTFreud! lettering, your end card.</span></th><td class="yes">60–90 a month, more when needed</td><td>Your 30 a month continue, on your current $300 plan</td></tr>
+      <tr><th scope="row"><b>Daily posting</b><span>We post for you on TikTok, Instagram, Facebook and YouTube Shorts, with titles, descriptions and hashtags.</span></th><td class="yes">Every day</td><td>Every day</td></tr>
+      <tr><th scope="row"><b>Your show</b><span>Each long episode edited, posted and announced to your list.</span></th><td class="yes">2 episodes a month</td><td>Not included</td></tr>
+      <tr class="grp"><th colspan="3">Your sales funnel</th></tr>
+      <tr><th scope="row"><b>Keyword funnel</b><span>Viewers comment one word. Your page messages them your free chapter and collects their email address.</span></th><td class="yes">2 funnels: Healing Narcissistic Wounds first, then Healing Childhood Wounds and the book</td><td>1 funnel: Healing Narcissistic Wounds</td></tr>
+      <tr><th scope="row"><b>Welcome emails</b><span>Five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes">5 per funnel</td><td>Open <span class="draft">Benas deciding</span></td></tr>
+      <tr><th scope="row"><b>Weekly email</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes">4 a month</td><td>Not included</td></tr>
+      <tr><th scope="row"><b>Consultation booking</b><span>A calendar on your site, so people book a time themselves.</span></th><td class="yes">Included</td><td>Not included</td></tr>
+      <tr class="grp"><th colspan="3">Your websites</th></tr>
+      <tr><th scope="row"><b>Sites that convert</b><span>We keep your look and make each site sell: layout errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes">All four sites, on a plan we agree with you</td><td>Not included</td></tr>
+      <tr class="grp"><th colspan="3">Your bigger moments</th></tr>
+      <tr><th scope="row"><b>Book launch</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes">Included</td><td>Not included</td></tr>
+      <tr><th scope="row"><b>Webinars</b><span>Sign-up page, reminders, the room, the tech on the day, the replay and follow-up emails.</span></th><td class="yes">Included <span class="draft">how often: Benas deciding</span></td><td>Not included</td></tr>
+      <tr><th scope="row"><b>The Gift House</b><span>The site fixed, an inquiry form for scouts, and videos of the house once we have footage.</span></th><td class="yes">Included</td><td>Not included</td></tr>
+      <tr class="grp"><th colspan="3">Working with us</th></tr>
+      <tr><th scope="row"><b>Weekly report</b><span>What we posted, which videos did best, new email addresses, what comes next.</span></th><td class="yes">Every week</td><td>A monthly summary</td></tr>
+      <tr><th scope="row"><b>Strategy calls</b><span>Time with Benas and Simas to plan the next weeks.</span></th><td class="yes">4 a month, and you can book more</td><td>By email</td></tr>
+      <tr><th scope="row"><b>Our guarantee</b><span>If your funnel brings no program sale within 30 days of going live, you choose.</span></th><td class="yes">One more month free, or your first month refunded <span class="draft">refund not agreed: Simas's rule</span></td><td>No guarantee</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small" style="margin-top:16px">Your part for the guarantee: approve posts within 48 hours and keep your checkout working. <span class="draft">Open with Benas: does the Full plan replace the $300 Shorts plan? Who pays for the tools? A market-value column with real agency prices is coming from Benas's side.</span></p>
   </div>
 </section>
 
