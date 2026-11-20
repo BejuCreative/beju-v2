@@ -28,3 +28,4 @@ drop policy if exists "founders read" on public.client_post_stats; create policy
 drop policy if exists "founders read" on public.client_reports; create policy "founders read" on public.client_reports for select using (public.is_admin());
 revoke all on public.client_accounts, public.client_posts, public.client_post_stats, public.client_reports from anon;
 grant select on public.client_accounts, public.client_posts, public.client_post_stats, public.client_reports to authenticated;
+alter table public.client_accounts add column if not exists name text;   -- display name from scripts/data/client_perf/accounts.json
