@@ -199,33 +199,44 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .wrapw{width:min(1120px,calc(100% - 32px))}
 .band{background:var(--soft)}
 .head{max-width:44em}
-.toc{margin:30px auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:46em}
-.toc a{font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;padding:8px 14px;border-radius:999px;border:1px solid var(--hair-2);background:#fff}
-.toc a:hover{border-color:var(--ink)}
-
-/* call summary */
-.sum{margin-top:30px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.sum .it{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px 22px}
-.sum .it b{display:block;color:var(--ink);font-size:18px;font-weight:600}
-.sum .it p{font-size:17px;line-height:1.55;color:var(--body);margin-top:6px}
+.secno{display:inline-block;min-width:2.1em;color:var(--dim);font-weight:500}
+.hero h1{font-size:clamp(34px,5.2vw,58px);max-width:17em;margin-inline:auto}
+.hero .ans{font-size:clamp(20px,2vw,24px);color:var(--ink);font-weight:500;max-width:30em;margin:22px auto 0;line-height:1.4}
+.hero .ans b{color:var(--green-head);font-weight:600}
+.toc{margin:34px auto 0;max-width:46em;text-align:left;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;border-top:1px solid var(--hair)}
+.toc a{display:flex;gap:10px;font-size:16px;color:var(--ink);text-decoration:none;padding:11px 2px;border-bottom:1px solid var(--hair)}
+.toc a:hover{color:var(--green-head)}
+.toc a span{color:var(--dim);font-variant-numeric:tabular-nums}
 .subh{margin-top:44px;font-size:24px;letter-spacing:-.02em}
-.guar ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:10px;max-width:46em}
-.guar li{position:relative;padding-left:30px;color:rgba(255,255,255,.9);font-size:17.5px;line-height:1.5}
-.guar li::before{content:"";position:absolute;left:0;top:4px;width:18px;height:18px;border-radius:50%;background:var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%2311150E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat}
-.tt2{margin-top:26px;width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--hair);border-radius:24px;overflow:hidden;font-size:17px}
-.tt2 th,.tt2 td{text-align:left;vertical-align:top;padding:18px 22px;border-bottom:1px solid var(--hair)}
-.tt2 tr:last-child th,.tt2 tr:last-child td{border-bottom:0}
-.tt2 th{width:26%;color:var(--ink);font-weight:600}
-.tt2 td{color:var(--body);line-height:1.55}
-@media (max-width:900px){.sum{grid-template-columns:1fr}.tt2 th,.tt2 td{display:block;width:auto}.tt2 th{border-bottom:0;padding-bottom:2px}.tt2 td{padding-top:0}}
 
-/* you said -> we do */
-.said{margin-top:30px;display:grid;gap:12px}
-.said .pair{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:16px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px 24px}
-.said .q{font-size:19px;line-height:1.45;color:var(--ink);font-weight:500;border-left:3px solid var(--gold);padding-left:16px}
-.said .q small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:4px}
-.said .arr{color:var(--green-head);font-size:22px;text-align:center}
-.said .a{font-size:17px;line-height:1.55;color:var(--body)}
+/* call summary, in the style of a meeting recap */
+.purpose{margin-top:30px;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px 24px;font-size:19px;color:var(--ink);line-height:1.5}
+.purpose b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:6px}
+.take{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.take div{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:18px 22px}
+.take b{display:block;color:var(--ink);font-size:18px;font-weight:600}
+.take span{display:block;font-size:17px;line-height:1.55;color:var(--body);margin-top:5px}
+.topics{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.topic{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:24px 24px 22px;display:grid;gap:12px;align-content:start}
+.topic h4{margin:0;font-size:21px;font-weight:600;color:var(--ink);letter-spacing:-.015em}
+.topic ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:17px;line-height:1.5;color:var(--body)}
+.topic .q{font-size:17px;line-height:1.45;color:var(--ink);font-weight:500;border-left:3px solid var(--gold);padding-left:14px}
+.topic .q small{display:block;font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.topic .do{background:var(--gold-soft);border-radius:14px;padding:12px 16px;font-size:16.5px;line-height:1.5;color:#0A3D24}
+.topic .do b{display:block;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+.nexts{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.nexts div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:22px 24px}
+.nexts b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.nexts ul{margin:10px 0 0;padding-left:20px;display:grid;gap:7px;font-size:17px;color:var(--body);line-height:1.5}
+
+/* plain data tables (what we found, terms, roadmap) */
+.tb{margin-top:26px;width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--hair);border-radius:24px;overflow:hidden;font-size:17px}
+.tb th,.tb td{text-align:left;vertical-align:top;padding:18px 22px;border-bottom:1px solid var(--hair);line-height:1.55}
+.tb tr:last-child th,.tb tr:last-child td{border-bottom:0}
+.tb thead th{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);background:var(--soft)}
+.tb tbody th{color:var(--ink);font-weight:600;width:27%}
+.tb td{color:var(--body)}
+.tb.three tbody th{width:30%}.tb.three td{width:35%}
 
 /* path: vertical timeline */
 .path{margin-top:34px;display:grid;gap:0;max-width:46em}
@@ -237,6 +248,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .path h3{font-size:22px;margin-top:10px}
 .path p{font-size:18px;line-height:1.6;color:var(--body);margin-top:6px}
 .bubble{margin-top:12px;display:inline-block;background:var(--gold-soft);color:#0A3D24;border-radius:16px 16px 16px 4px;padding:12px 16px;font-size:17px;line-height:1.5;max-width:30em}
+.twice{margin-top:30px;max-width:46em;border:1px solid var(--gold);background:var(--gold-soft);border-radius:18px;padding:20px 24px}
+.twice b{display:block;color:#0A3D24;font-size:20px;font-weight:600}
+.twice p{color:#0A3D24;font-size:17px;margin-top:6px}
 
 /* trust: two phones */
 .works{margin-top:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
@@ -254,7 +268,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .cmp thead .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
 .cmp thead th.main .pill{background:var(--ink);color:#fff}
 .cmp thead b{display:block;font-size:21px;font-weight:600;color:var(--ink);margin-top:12px;line-height:1.25}
-.cmp thead .pr{display:block;font-size:44px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1.05;margin-top:8px}
+.cmp thead .was{display:block;margin-top:10px;font-size:15px;font-weight:400;color:var(--body);line-height:1.4}
+.cmp thead .was s{color:var(--muted)}
+.cmp thead .only{display:block;margin-top:8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text)}
+.cmp thead .pr{display:block;font-size:44px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1.05;margin-top:4px}
 .cmp thead .pr small{display:block;font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:4px}
 .cmp thead .sub{display:block;font-size:15px;font-weight:400;color:var(--body);margin-top:8px;line-height:1.45}
 .cmp .main,.cmp td.yes{background:var(--gold-soft)}
@@ -268,24 +285,37 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .cmp td .no{color:var(--dim);font-weight:400}
 .cmp td.val{color:var(--body);font-weight:400;font-size:16px}
 .cmp td.val b{display:block;color:var(--ink);font-weight:600}
+.cmp td.val sup,.src sup{font-size:11px;color:var(--gold-text);font-weight:600}
 .cmp tr.grp th{background:var(--soft);padding:12px 20px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
 .cmp tr.tot th,.cmp tr.tot td{border-bottom:0;border-top:2px solid var(--ink);padding-top:22px;padding-bottom:24px}
 .cmp tr.tot td{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.cmp tr.tot td small{display:block;font-size:15px;font-weight:400;color:var(--body);letter-spacing:0;margin-top:4px}
 .cmp tr.tot td.val{font-size:18px;font-weight:600;color:var(--ink);letter-spacing:0}
-.note{margin-top:14px;font-size:15px;color:var(--body);max-width:60em}
+.note{margin-top:14px;font-size:15px;color:var(--body);max-width:62em}
+.src{margin-top:18px;font-size:14px;color:var(--body);line-height:1.6;max-width:70em}
+.src a{color:var(--body)}
 
-/* guarantee */
-.guar{margin-top:26px;background:var(--ink);color:#fff;border-radius:24px;padding:clamp(28px,4vw,44px);display:grid;gap:14px}
-.guar .eyebrow{color:var(--gold)}
-.guar h3{color:#fff;font-size:clamp(26px,3.2vw,36px);line-height:1.15;letter-spacing:-.025em;max-width:22em}
-.guar h3 span{color:var(--gold)}
-.guar p{color:rgba(255,255,255,.86);font-size:18px;max-width:44em}
+/* guarantee: a light document box, no dark band */
+.guar{margin-top:26px;background:#fff;border:2px solid var(--gold);border-radius:24px;padding:clamp(26px,4vw,42px);display:grid;gap:14px}
+.guar h3{font-size:clamp(26px,3.2vw,36px);line-height:1.15;letter-spacing:-.025em;max-width:22em}
+.guar h3 span{color:var(--green-head)}
+.guar ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:10px;max-width:48em}
+.guar li{position:relative;padding-left:32px;color:var(--body);font-size:17.5px;line-height:1.5}
+.guar li::before{content:"";position:absolute;left:0;top:3px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
 
-/* terms */
-.tgrid{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.tgrid .card{display:grid;gap:8px;align-content:start}
-.tgrid h3{font-size:19px}
-.tgrid p{font-size:16px;color:var(--body)}
+/* break-even */
+.be{margin-top:26px;background:#fff;border:1px solid var(--hair);border-radius:24px;padding:clamp(24px,3.4vw,36px);display:grid;gap:16px}
+.be h3{font-size:24px;letter-spacing:-.02em}
+.be .ctl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px;align-items:end}
+.be label{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.be select{width:100%;height:50px;border-radius:12px;border:1px solid var(--hair-2);background:#fff;font:500 17px var(--sans);color:var(--ink);padding:0 12px}
+.be input[type=range]{width:100%;accent-color:var(--green-head);height:28px}
+.be .out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.be .out div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.be .out b{display:block;font-size:30px;font-weight:600;letter-spacing:-.03em;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.be .out span{display:block;font-size:15px;color:var(--body);margin-top:6px}
+.be .out div.pos b{color:var(--green-head)}
+.be .static{display:none}
 
 /* detail */
 .dt{margin-top:30px;display:grid;gap:16px}
@@ -298,36 +328,100 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .dcard .ex .lbl{margin-top:0;color:var(--gold-text)}
 .dcard .ex p{color:#0A3D24;font-size:17px}
 
-/* six cards in the working-together grid */
-.comm{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:900px){.comm{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:560px){.comm{grid-template-columns:1fr}}
+/* per-site cards */
+.sites{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.site{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px;display:grid;gap:12px;align-content:start}
+.site h3{font-size:20px;overflow-wrap:anywhere}
+.site .what{font-size:16px;color:var(--body)}
+.site ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:16.5px;color:var(--body);line-height:1.5}
+.pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.pick label{position:relative;display:block;cursor:pointer}
+.pick input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.pick span{display:block;text-align:center;padding:11px 6px;border-radius:12px;border:1px solid var(--hair-2);font-size:15.5px;font-weight:500;color:var(--ink);background:#fff}
+.pick input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pick input:focus-visible+span{outline:3px solid rgba(34,209,111,.55);outline-offset:2px}
+.levels{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.levels div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.levels b{display:block;color:var(--ink);font-size:17px}
+.levels span{display:block;font-size:15.5px;color:var(--body);margin-top:4px;line-height:1.5}
+.picksum{margin-top:18px;font-size:16px;color:var(--body)}
 
 /* after you pay */
+.comm{grid-template-columns:repeat(3,minmax(0,1fr))}
 .steps4{margin-top:28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .steps4 .card{display:grid;gap:10px;align-content:start}
 .steps4 .num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:15px}
 .steps4 h3{font-size:19px}
 
 @media (max-width:900px){
-  .works,.tgrid{grid-template-columns:1fr}
+  .works,.take,.topics,.nexts,.sites,.levels,.be .ctl,.be .out,.toc{grid-template-columns:1fr}
+  .comm{grid-template-columns:repeat(2,minmax(0,1fr))}
   .steps4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dcard{grid-template-columns:1fr;padding:22px}
-  .said .pair{grid-template-columns:1fr;gap:10px}
-  .said .arr{display:none}
+  .tb th,.tb td{display:block;width:auto!important}
+  .tb tbody th{border-bottom:0;padding-bottom:2px}
+  .tb tbody td{padding-top:4px}
+  .tb thead{display:none}
 }
 @media (max-width:560px){
-  .steps4{grid-template-columns:1fr}
+  .steps4,.comm{grid-template-columns:1fr}
   .work{grid-template-columns:1fr;justify-items:center;text-align:center}
   .path .st{grid-template-columns:44px 1fr;gap:14px}
   .path .n{width:44px;height:44px;font-size:17px}
   .path .st::before{left:21px;top:44px}
 }
-@media print{.dcard,.said .pair,.work,.guar,.path .st{break-inside:avoid}.cmpwrap{overflow:visible}.cmp{min-width:0;font-size:9.5pt}.draftbar{display:none}}
+
+/* PDF: Chrome prints at about 680 px wide, so the phone rules above would apply. Force the desktop grids back. */
+@media print{
+  @page{size:A4;margin:14mm 12mm 18mm;
+    @bottom-center{content:"Scope BEJ-2026-0123 · Dr. Judy Rosenberg · issued 21 Nov 2026 · BEJÚ Creative · page " counter(page) " of " counter(pages);font-family:Geist,Helvetica,Arial,sans-serif;font-size:8pt;color:#646C5C}}
+  body{font-size:10.5pt}
+  .facts{grid-template-columns:repeat(3,1fr)!important}
+  .facts div+div{border-left:1px solid var(--hair)!important;border-top:0!important}
+  .head{break-inside:avoid}
+  #plan,#detail,#sites{break-before:page}
+  .cmp tr.grp{break-after:avoid}
+  .site h3{font-size:11.5pt;word-break:normal;overflow-wrap:anywhere}
+  .steps4 h3{font-size:10.5pt}.steps4 .card p{font-size:9pt}
+  section{padding:14px 0!important;border:0}
+  .band{background:#fff}
+  .draftbar,.noprint,.toc,.pick,.picksum,.be .ctl,.be .out,.phone,.draft{display:none!important}
+  .be .static{display:table}
+  .hero{padding:18px 0 6px}
+  .hero h1{font-size:24pt}
+  h2{font-size:17pt}
+  .wrap,.wrapw{width:100%}
+  .take,.topics,.nexts,.sites,.works{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .levels,.comm{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .steps4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dcard{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)!important;padding:14px 16px;gap:16px}
+  .work{grid-template-columns:1fr!important}
+  .tb th,.tb td{display:table-cell!important;padding:9px 12px;font-size:9.5pt}
+  .tb thead{display:table-header-group!important}
+  .tb tbody th{border-bottom:1px solid var(--hair)!important}
+  .cmpwrap{overflow:visible;border-radius:12px}
+  .cmp{min-width:0;font-size:9pt}
+  .cmp th,.cmp td{padding:8px 10px}
+  .cmp thead{display:table-row-group}
+  .cmp thead th{padding:12px 10px}
+  .cmp thead b{font-size:11.5pt;margin-top:8px}
+  .cmp thead .sub,.cmp thead .was{font-size:8.5pt}
+  .cmp thead .only{font-size:7pt}
+  .cmp thead .pill{font-size:7pt}
+  .cmp thead .pr{font-size:20pt}
+  .cmp tbody th b{font-size:10pt}.cmp tbody th span{font-size:8.5pt}
+  .cmp td.val{font-size:8.5pt}
+  .cmp tr.tot td{font-size:13pt}
+  .take div,.topic,.nexts div,.site,.dcard,.work,.guar,.be,.path .st,.tb tr,.cmp tr,.steps4 .card,.comm .card,.levels div,.purpose,.twice{break-inside:avoid}
+  .dcard p,.topic ul,.topic .q,.topic .do,.take span,.site ul,.path p,.guar li,.nexts ul{font-size:9.8pt}
+  .dcard h3{font-size:14pt}.topic h4{font-size:12.5pt}
+  .subh,h2,.head{break-after:avoid}
+  a{text-decoration:none}
+}
 </style>
 </head>
 <body>
-<div class="draftbar noprint">INTERNAL DRAFT for Simas and Benas. Not sent to Dr. Judy. Terms are Simas's answers of 21 Nov, waiting for Benas's view. No payment link on purpose.</div>
+<div class="draftbar noprint">INTERNAL DRAFT for Simas and Benas. Not sent to Dr. Judy. Both founders' decisions of 21 Nov are in. No payment link on purpose.</div>
 <nav class="nav" aria-label="Scope">
   <div class="wrap">
     <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
@@ -337,13 +431,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 </nav>
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">Scope of work</p>
-    <h1 style="margin-top:14px">Your growth team for <span class="gold">Dr. Judy WTFreud!</span></h1>
-    <p class="lede">Built around one goal: your videos bringing people to your programs, your book and your practice, without you managing any of it.</p>
-    <div class="btns noprint"><a class="btn primary" href="#plan">See your plan</a></div>
-    <div class="toc noprint">
-      <a href="#call">Our call</a><a href="#how">How it works</a><a href="#trust">Who we work with</a><a href="#plan">Your plan</a><a href="#terms">Guarantee and terms</a><a href="#detail">Every part in detail</a><a href="#after">After you pay</a><a href="#faq">Questions</a>
-    </div>
+    <p class="eyebrow">Scope of work · Dr. Judy WTFreud!</p>
+    <h1 style="margin-top:14px">“Do you think you could seriously <span class="gold">increase my business?”</span></h1>
+    <p class="ans"><b>Yes.</b> Here's exactly how, what it's worth, and what happens if it doesn't work.</p>
+    <div class="btns noprint"><a class="btn primary" href="#plan">See your plan</a><a class="btn ghost" href="Dr-Judy-Scope-BEJU-Creative.pdf" download>Download PDF</a></div>
     <div class="meta">
       <span>Prepared for <b>Dr. Judy Rosenberg, Psychological Healing Center</b></span>
       <span>Scope <b>BEJ-2026-0123</b></span>
@@ -351,6 +442,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       <span>Valid until <b>5 Dec 2026</b></span>
       <span>Your contact <b>Benas, Co-founder</b></span>
     </div>
+    <div class="toc noprint"><a href="#call"><span>01</span>Our call</a><a href="#found"><span>02</span>What we found</a><a href="#how"><span>03</span>How it works</a><a href="#engine"><span>04</span>How we work</a><a href="#plan"><span>05</span>Your plan and our 30-day promise</a><a href="#terms"><span>06</span>The terms</a><a href="#detail"><span>07</span>Every part in detail</a><a href="#sites"><span>08</span>Your four websites</a><a href="#road"><span>09</span>Your first 90 days</a><a href="#trust"><span>10</span>Who we work with</a><a href="#after"><span>11</span>After you pay</a><a href="#faq"><span>12</span>Questions</a></div>
   </div>
 </header>
 
@@ -364,42 +456,60 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 
 <section class="band" id="call" aria-labelledby="call-h">
   <div class="wrap">
-    <div class="head"><p class="eyebrow">Our call on 20 November</p><h2 id="call-h">What you told us, and <span class="gold">what we do about it</span></h2>
-      <p class="lede">You and Benas spoke for almost an hour. Here is a summary of the call, and then your own words next to what we do about each one.</p></div>
-    <h3 class="subh" style="margin-top:34px">Our call, in short</h3>
-    <div class="sum" style="margin-top:16px">
-      <div class="it"><b>Your brand</b><p>You want every video to look like yours at first sight. We agreed on three parts: a question in yellow first, you talking, and one end card with your website, “Call now for information” and 310-651-7644. Your WTFreud! banner sets the style.</p></div>
-      <div class="it"><b>Your footage</b><p>Your studio recordings look best, so we use them first: the interview where you host Rebecca Zung, your site's welcome video, and your new talk on why we love people who keep hurting us.</p></div>
-      <div class="it"><b>The four videos from that day</b><p>You asked us to redo them in the new look, so your pages can show about one a day.</p></div>
-      <div class="it"><b>Posting</b><p>You asked if we can post everywhere for you. Yes: Instagram, TikTok, YouTube and Facebook.</p></div>
-      <div class="it"><b>Your social accounts</b><p>You asked what your assistant would still need to do. We take over running and growing your social accounts. What she keeps is your call.</p></div>
-      <div class="it"><b>Sales</b><p>Business has been slower than you'd like, and you asked if we can seriously grow it. You want emails captured and the work automated, and you asked to start with a small test.</p></div>
-      <div class="it"><b>Your programs and your book</b><p>Healing Narcissistic Wounds at $497, Healing Childhood Wounds at $395, both for about $665, and the new book in February that you want to start promoting.</p></div>
-      <div class="it"><b>Your websites</b><p>You built them yourself. One page didn't load well for us, and you asked if we could fix it.</p></div>
-      <div class="it"><b>The Gift House and webinars</b><p>You asked if we can bring the Gift House more business, and if we can help you set up a webinar. Both are in the plan.</p></div>
-      <div class="it"><b>What comes next</b><p>You asked for everything in writing. This page is that.</p></div>
+    <div class="head"><p class="eyebrow"><span class="secno">01</span>Call summary</p><h2 id="call-h">Our call on <span class="gold">20 November</span></h2>
+      <p class="lede">You and Benas spoke for almost an hour. This is what we took from it.</p></div>
+    <p class="purpose"><b>Meeting purpose</b>Agree one consistent look for your videos, and find out how those videos can bring more people to your programs.</p>
+    <h3 class="subh">Key takeaways</h3>
+    <div class="take">
+      <div><b>A new look for every video</b><span>A question in yellow first, then you talking, then one end card with healingnarcissisticwounds.com, “Call now for information” and 310-651-7644.</span></div>
+      <div><b>Studio footage first</b><span>Your professional recordings, like the interview where you host Rebecca Zung, look best. We make new clips from them.</span></div>
+      <div><b>More than editing</b><span>You asked if we can also post for you, capture emails and automate the work, and you asked to start with a small test.</span></div>
+      <div><b>Your sites and your book</b><span>A few things on your sites lose visitors today. Your new book comes out in February, and you want to start promoting it.</span></div>
     </div>
-    <h3 class="subh">In your words</h3>
-    <div class="said" style="margin-top:16px">
-      <div class="pair"><p class="q">“We need a banner, we need a hook, we need me.”</p><span class="arr" aria-hidden="true">→</span><p class="a">Every video opens on a question in yellow while you start talking, and it carries your WTFreud! lettering.</p></div>
-      <div class="pair"><p class="q">“The first thing they should see is the question.”</p><span class="arr" aria-hidden="true">→</span><p class="a">The question is on screen from the first frame. No banner or intro comes before it.</p></div>
-      <div class="pair"><p class="q">“I really want them to see HealingNarcissisticWounds.com… and then call now for information.”</p><span class="arr" aria-hidden="true">→</span><p class="a">One standard end card on every video: your website, “Call now for information”, and 310-651-7644.</p></div>
-      <div class="pair"><p class="q">“Never cut me off at a weird spot.”</p><span class="arr" aria-hidden="true">→</span><p class="a">Every cut ends on a finished sentence, with your mouth closed.</p></div>
-      <div class="pair"><p class="q">“Can you center my face a little bit more?”</p><span class="arr" aria-hidden="true">→</span><p class="a">Done on the new versions. Your studio recordings let us frame you even better.</p></div>
-      <div class="pair"><p class="q">“I want to spread it out, like one a day.”</p><span class="arr" aria-hidden="true">→</span><p class="a">One video a day, on a calendar you can see.</p></div>
-      <div class="pair"><p class="q">“Can you post to TikTok and Facebook, and can you do all that work?”</p><span class="arr" aria-hidden="true">→</span><p class="a">Yes. We post for you on TikTok, Instagram, Facebook and YouTube Shorts.</p></div>
-      <div class="pair"><p class="q">“I want to capture emails. I want automated.”</p><span class="arr" aria-hidden="true">→</span><p class="a">The keyword funnel: a viewer comments one word, follows you, and gets your free chapter in exchange for an email address.</p></div>
-      <div class="pair"><p class="q">“Could you post my video show twice a month?”</p><span class="arr" aria-hidden="true">→</span><p class="a">We edit, post and announce both episodes each month.</p></div>
-      <div class="pair"><p class="q">“I want to start pre-advertising that one.”<small>your February book</small></p><span class="arr" aria-hidden="true">→</span><p class="a">A waitlist page with the first chapter as a gift, starting now. Launch content follows.</p></div>
-      <div class="pair"><p class="q">“Can you help me set up a webinar?”</p><span class="arr" aria-hidden="true">→</span><p class="a">Yes. We set it up, run the tech on the day, and send the follow-up emails.</p></div>
-      <div class="pair"><p class="q">“I can't manage it.”<small>free consultation requests</small></p><span class="arr" aria-hidden="true">→</span><p class="a">A booking calendar. People pick from the hours you open, and only booked calls reach you.</p></div>
+    <h3 class="subh">Topics</h3>
+    <div class="topics">
+      <div class="topic"><h4>Your brand and your videos</h4><ul><li>You want people to recognise your videos at once, in the style of your WTFreud! banner.</li><li>The question comes first, in yellow, while you start talking.</li><li>No cut in the middle of a word, or with your mouth open.</li><li>Your face sits more in the centre.</li><li>One end card on every video: your website, “Call now for information”, and 310-651-7644.</li></ul>
+        <p class="q"><small>You said</small>“We need a banner, we need a hook, we need me.”</p><p class="do"><b>What we do</b>Every video now follows this look. The four from that day are redone first.</p></div>
+      <div class="topic"><h4>Your footage</h4><ul><li>Studio recordings look better than webcam recordings.</li><li>Use the interview where you host Rebecca Zung, and keep it about you.</li><li>Your site's welcome video can become a short ad.</li><li>Your new talk, “Why We Love People Who Keep Hurting Us”, has strong lines.</li></ul>
+        <p class="q"><small>You said</small>“That's professional. I want to make it more about me.”</p><p class="do"><b>What we do</b>Two or three clips from each studio recording, with you in the centre of the picture.</p></div>
+      <div class="topic"><h4>Posting and your social accounts</h4><ul><li>You want to spread your videos out, about one a day.</li><li>You asked if we can post on TikTok, Facebook and the others for you.</li><li>You asked what your assistant would still need to do.</li></ul>
+        <p class="q"><small>You said</small>“Can you post to TikTok and Facebook, and can you do all that work?”</p><p class="do"><b>What we do</b>Yes. We post every day on Instagram, TikTok, YouTube Shorts and Facebook, and we run and grow the accounts. What your assistant keeps is your call.</p></div>
+      <div class="topic"><h4>Sales and your email list</h4><ul><li>Business has been slower than you'd like.</li><li>You want emails captured and the work automated.</li><li>You asked to start with a small test, at a low cost.</li><li>Your programs: Healing Narcissistic Wounds at $497, Healing Childhood Wounds at $395, both for about $665.</li></ul>
+        <p class="q"><small>You said</small>“I want to capture emails. I want automated. I want a lot of spreading to social media.”</p><p class="do"><b>What we do</b>A keyword funnel. A viewer comments one word, follows you, and gets your free chapter in exchange for an email address. Then your emails follow up.</p></div>
+      <div class="topic"><h4>Your websites</h4><ul><li>You built your sites yourself.</li><li>One page didn't load well when we opened it, and you asked if we could fix it.</li><li>Free consultation requests are more than you can manage.</li><li>The Gift House gets a new first photo when your carpet arrives.</li></ul>
+        <p class="q"><small>You said</small>“I can't manage it.”</p><p class="do"><b>What we do</b>We keep your look and fix what loses visitors. A booking calendar replaces the call-backs.</p></div>
+      <div class="topic"><h4>Your book and webinars</h4><ul><li>Healing Childhood Wounds, the book, comes out in February.</li><li>You want to start promoting it now.</li><li>You asked if we can help you set up a webinar.</li></ul>
+        <p class="q"><small>You said</small>“I want to start pre-advertising that one.”</p><p class="do"><b>What we do</b>A waitlist with the first chapter as a gift, then launch videos and emails. Webinars are set up and run for you, whenever you want one.</p></div>
+    </div>
+    <h3 class="subh">Next steps</h3>
+    <div class="nexts">
+      <div><b>BEJÚ Creative</b><ul><li>Redo the four videos in the new look.</li><li>Make new clips from your studio interview and your welcome video.</li><li>Put everything in writing, with prices. This page is that.</li><li>Ask Joriz how your social accounts are set up.</li></ul></div>
+      <div><b>Dr. Judy</b><ul><li>Read this scope.</li><li>Retake the Gift House photo when your carpet arrives.</li></ul></div>
     </div>
   </div>
 </section>
 
-<section id="how" aria-labelledby="how-h">
+<section id="found" aria-labelledby="found-h">
   <div class="wrap">
-    <div class="head"><p class="eyebrow">How it works</p><h2 id="how-h">From one video to a <span class="gold">program sale</span></h2>
+    <div class="head"><p class="eyebrow"><span class="secno">02</span>What we found</p><h2 id="found-h">Six places where people <span class="gold">slip away</span></h2>
+      <p class="lede">You built your sites yourself, and they look like you. We looked at them and at your pages as a visitor would. These six things are small to fix, and each one loses people today.</p></div>
+    <table class="tb three">
+      <thead><tr><th>What we found</th><th>What it costs you</th><th>What we do</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">The Shorts we made aren't on your pages yet</th><td>Videos that sit in a folder reach no one.</td><td>We post every day for you, on all four channels.</td></tr>
+        <tr><th scope="row">Your free chapter downloads without an email address</th><td>People read it and leave, and you never learn who they were.</td><td>The chapter asks for an email address first, so every download adds a person to your list.</td></tr>
+        <tr><th scope="row">The “2-Minute Quiz” button leads to a missing page</th><td>A visitor who was curious enough to click meets an error.</td><td>We point the button at a working quiz, or remove it until the quiz is ready.</td></tr>
+        <tr><th scope="row">The Healing Childhood Wounds site carries the other site's title</th><td>Google reads it as a copy of your narcissistic-abuse site, so it is hard to find.</td><td>We give it its own title and tell Google it is its own site.</td></tr>
+        <tr><th scope="row">A free consultation ends in “we'll call you”</th><td>Someone has to call each person back, and you told us you can't manage that.</td><td>A calendar where people book a time themselves, in the hours you open.</td></tr>
+        <tr><th scope="row">Healing Childhood Wounds is sold in three places, at $395, $395 and $397</th><td>Two prices for one program make buyers hesitate.</td><td>One page and one price, and every link points to it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">03</span>How it works</p><h2 id="how-h">From one video to a <span class="gold">program sale</span></h2>
       <p class="lede">Here is the whole path, with one of your own videos as the example.</p></div>
     <div class="path">
       <div class="st"><span class="n">1</span><div><h3>Someone sees your video</h3><p>A Short opens on your question in yellow: “Why do we love people who keep hurting us?” They stop scrolling to hear the answer.</p></div></div>
@@ -408,14 +518,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       <div class="st"><span class="n">4</span><div><h3>Your emails stay with them</h3><p>Over two weeks they get five short emails in your voice. After that, one email a week.</p></div></div>
       <div class="st"><span class="n">5</span><div><h3>They take the next step</h3><p>They buy Healing Narcissistic Wounds or Healing Childhood Wounds. Or they book a free consultation, at a time you opened.</p></div></div>
     </div>
+    <div class="twice"><b>Every comment grows your audience twice.</b><p>Each person who comments becomes a follower and a name on your email list. And every comment tells the platform that people care, so it shows the video to more people.</p></div>
   </div>
 </section>
 
-<section class="band" aria-labelledby="engine">
+<section id="engine" aria-labelledby="engine-h">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">How we work</p>
-      <h2 id="engine">50% editing. <span class="gold">50% content engine.</span></h2>
+      <p class="eyebrow"><span class="secno">04</span>How we work</p>
+      <h2 id="engine-h">50% editing. <span class="gold">50% content engine.</span></h2>
       <p class="lede">We're not just video editors. Half of our work is deciding what gets made, how it opens, and where it sends people.</p>
     </div>
     <div class="split2">
@@ -425,9 +536,171 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   </div>
 </section>
 
+<section class="band" id="plan" aria-labelledby="plan-h">
+  <div class="wrap wrapw">
+    <div class="head"><p class="eyebrow"><span class="secno">05</span>Your plan</p><h2 id="plan-h">What you get, <span class="gold">side by side</span></h2>
+      <p class="lede">Two ways to work with us. Every row says what it is, in one line. The last column shows what other firms list for that one piece on its own.</p></div>
+    <div class="cmpwrap"><table class="cmp">
+      <thead><tr><th></th>
+        <th class="main"><span class="pill">Recommended</span><b>Sales Engine: Full Business</b><span class="was">Bought piece by piece: <s>$5,450–$18,198 a month</s></span><span class="only">Only available as part of the plan</span><span class="pr">$2,500 <small>a month</small></span><span class="sub">Everything, run for you as one team. Tool costs are covered by us.</span></th>
+        <th><span class="pill">Small start</span><b>Lead Magnet Test</b><span class="pr">$600 <small>a month</small></span><span class="sub">One funnel and posting, next to your $300 Shorts plan.</span></th>
+        <th><span class="pill">What others charge</span><b>For that one piece alone</b><span class="sub">Listed prices from other firms. Sources below.</span></th></tr></thead>
+      <tbody>
+        <tr class="grp"><th colspan="4">Your videos</th></tr>
+        <tr><th scope="row"><b>1. New videos every day</b><span>We make two or three new Shorts for you every day, from your long videos. Each one has a yellow question first, your WTFreud! lettering and your end card.</span></th><td class="yes"><span class="ok"><span>60–90 a month, more when needed</span></span></td><td>Your 30 a month continue, on your current $300 plan</td><td class="val"><b>ShortVids, Fame Clips</b>$2,350–$4,999 a month for 60–95 Shorts<sup>1</sup></td></tr>
+        <tr><th scope="row"><b>2. Posted on all your channels</b><span>We post them for you, every day, on Instagram, TikTok, YouTube Shorts and Facebook. Each post gets its own title, description and hashtags.</span></th><td class="yes"><span class="ok"><span>Every day, all four channels</span></span></td><td><span class="ok"><span>Every day, all four channels</span></span></td><td class="val"><b>Social media agencies</b>$500–$5,000 a month. WebFX starts at $3,150.<sup>2</sup></td></tr>
+        <tr><th scope="row"><b>3. Your show</b><span>Each long episode edited, posted and announced to your list.</span></th><td class="yes"><span class="ok"><span>2 episodes a month</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>PodQuake, Cashflow Podcasting</b>$300–$1,199 a month<sup>3</sup></td></tr>
+        <tr class="grp"><th colspan="4">Your sales funnel</th></tr>
+        <tr><th scope="row"><b>Keyword funnel, for followers</b><span>Viewers comment one word. Your page messages them, asks them to follow you, and sends your free chapter in exchange for their email address.</span></th><td class="yes"><span class="ok"><span>2 funnels: Healing Narcissistic Wounds first, then Healing Childhood Wounds and the book</span></span></td><td><span class="ok"><span>1 funnel: Healing Narcissistic Wounds</span></span></td><td class="val"><b>Contra, ManyPixels</b>from $279 one time, or $699–$1,199 a month, for the gift and its page alone<sup>6</sup></td></tr>
+        <tr><th scope="row"><b>Welcome emails</b><span>Five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes"><span class="ok"><span>5 per funnel</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Contra freelancers</b>from $1,500 per sequence<sup>5</sup></td></tr>
+        <tr><th scope="row"><b>Weekly email</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes"><span class="ok"><span>4 a month</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Email agencies</b>$300–$2,000 a month<sup>4</sup></td></tr>
+        <tr><th scope="row"><b>Consultation booking</b><span>A calendar on your site. You open the hours that work for you, and people book themselves.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
+        <tr class="grp"><th colspan="4">Your websites</th></tr>
+        <tr><th scope="row"><b>Sites that sell</b><span>We keep your look and make each site sell: small errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes"><span class="ok"><span>All four sites, on a plan we agree with you</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Twine, Linear Design</b>$500–$3,000 per page<sup>7</sup></td></tr>
+        <tr class="grp"><th colspan="4">Your bigger moments</th></tr>
+        <tr><th scope="row"><b>Book launch</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Book marketing firms</b>$3,500–$7,500 per launch<sup>9</sup></td></tr>
+        <tr><th scope="row"><b>Webinars</b><span>When you want to run one: the sign-up page, reminders, the room, the tech on the day, the replay and the follow-up emails.</span></th><td class="yes"><span class="ok"><span>Included, whenever you want one</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Webinar producers</b>$500–$5,000 per event<sup>8</sup></td></tr>
+        <tr><th scope="row"><b>The Gift House</b><span>Your home as a film and photo location: a sharper first photo on the site, an inquiry form for scouts, and videos made from footage you film.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="no">Not included</span></td><td class="val"></td></tr>
+        <tr class="grp"><th colspan="4">Working with us</th></tr>
+        <tr><th scope="row"><b>All the tools, paid by our team</b><span>The message tool, the email sender, the booking calendar and the webinar room. Our team pays for them and runs them. You pay nothing extra.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
+        <tr><th scope="row"><b>Weekly report</b><span>What we posted, which videos did best, new followers and email addresses, what comes next.</span></th><td class="yes"><span class="ok"><span>Every week</span></span></td><td><span class="no">Not included</span></td><td class="val"></td></tr>
+        <tr><th scope="row"><b>Strategy calls</b><span>Time with Benas and Simas to plan the next weeks. You pick the times that suit you.</span></th><td class="yes"><span class="ok"><span>4 a month, and more whenever you want</span></span></td><td><span class="ok"><span>Whenever you want one</span></span></td><td class="val"><b>Marketing advisers</b>$2,000–$5,000 a month<sup>10</sup></td></tr>
+        <tr class="tot"><th scope="row"><b>Every month, in total</b><span>The Full plan replaces your $300 Shorts plan. The 22 Shorts still owed this month come on top, at no extra cost.</span></th><td class="yes">$2,500</td><td>$900<small>$600 plus your $300 Shorts plan</small></td><td class="val">$5,450–$18,198 a month for the monthly pieces alone</td></tr>
+      </tbody>
+    </table></div>
+    <p class="src"><b>Sources for “what others charge”</b> (listed prices, read in November 2026; the total adds the monthly rows only: Shorts, posting, show, weekly emails and advisers). <sup>1</sup> ShortVids pricing; Fame Clips (listed on Futurepedia): <a href="https://shortvids.co/pricing/" target="_blank" rel="noopener">shortvids.co</a>, <a href="https://www.futurepedia.io/tool/fame-clips" target="_blank" rel="noopener">futurepedia.io</a> · <sup>2</sup> WebFX social media pricing; Sprout Social cost guide: <a href="https://www.webfx.com/social-media/pricing/" target="_blank" rel="noopener">webfx.com</a>, <a href="https://sproutsocial.com/insights/social-media-management-cost/" target="_blank" rel="noopener">sproutsocial.com</a> · <sup>3</sup> Rephonic, podcast editing cost: <a href="https://rephonic.com/blog/podcast-editing-cost" target="_blank" rel="noopener">rephonic.com</a> · <sup>4</sup> Campaign Monitor, email agency pricing: <a href="https://www.campaignmonitor.com/blog/email-marketing/agency-pricing" target="_blank" rel="noopener">campaignmonitor.com</a> · <sup>5</sup> Contra, welcome email sequence: <a href="https://contra.com/s/XRPUgerv-welcome-email-sequence-strategy-copy" target="_blank" rel="noopener">contra.com</a> · <sup>6</sup> Contra, lead magnet design; ManyPixels: <a href="https://contra.com/s/qUR2lWeR-lead-magnet-design-service-for-client-funnels" target="_blank" rel="noopener">contra.com</a>, <a href="https://www.manypixels.co/blog/get-a-designer/lead-magnet-and-ebook-design-services" target="_blank" rel="noopener">manypixels.co</a> · <sup>7</sup> Twine; Linear Design, landing page cost: <a href="https://www.twine.net/blog/how-much-does-a-custom-landing-page-cost/" target="_blank" rel="noopener">twine.net</a>, <a href="https://lineardesign.com/blog/how-much-does-it-cost-to-design-a-landing-page/" target="_blank" rel="noopener">lineardesign.com</a> · <sup>8</sup> Demio, cost of webinars: <a href="https://www.demio.com/blog/cost-of-webinars" target="_blank" rel="noopener">demio.com</a> · <sup>9</sup> A Marketing Expert, book marketing cost: <a href="https://amarketingexpert.com/2026/07/07/what-does-book-marketing-cost-a-realistic-guide-for-authors/" target="_blank" rel="noopener">amarketingexpert.com</a> · <sup>10</sup> Kalungi, fractional CMO cost: <a href="https://www.kalungi.com/blog/how-much-does-a-fractional-cmo-cost" target="_blank" rel="noopener">kalungi.com</a></p>
+
+    <div class="guar">
+      <p class="eyebrow">Our 30-day promise · Sales Engine: Full Business</p>
+      <h3>No program sale in your first 30 days? <span>You choose: one more month free, or your first month back.</span></h3>
+      <ul>
+        <li>The 30 days start when your first funnel goes live.</li>
+        <li>Any sale of your $395 or $497 program, or the two together, counts.</li>
+        <li>On day 30 we check with you, and you show us your sales report for those 30 days. If nothing sold, we offer you the choice. You don't have to ask.</li>
+        <li>The 30 days pause while we wait more than 48 hours for an approval from you, or while your checkout is down.</li>
+        <li>If you choose the refund, we pay it within 14 days and the plan ends. You keep your videos and your email list.</li>
+        <li>This promise applies to the Sales Engine: Full Business plan, once.</li>
+      </ul>
+    </div>
+
+    <div class="be">
+      <h3>When does the plan pay for itself?</h3>
+      <p class="small">Move the slider. This is arithmetic with your own prices, not a forecast.</p>
+      <div class="ctl noprint">
+        <div><label for="be-price">Which program</label>
+          <select id="be-price"><option value="497">Healing Narcissistic Wounds, $497</option><option value="395">Healing Childhood Wounds, $395</option><option value="665">Both together, $665</option></select></div>
+        <div><label for="be-n">Sales a month: <span id="be-nv">6</span></label><input type="range" id="be-n" min="1" max="15" step="1" value="6"></div>
+      </div>
+      <div class="out noprint" aria-live="polite">
+        <div><b id="be-rev">$2,982</b><span>from program sales that month</span></div>
+        <div><b>$2,500</b><span>your plan</span></div>
+        <div id="be-box" class="pos"><b id="be-left">+$482</b><span id="be-msg">left after the plan</span></div>
+      </div>
+      <table class="tb static"><thead><tr><th>Program</th><th>Price</th><th>Sales a month that cover the $2,500 plan</th></tr></thead><tbody>
+        <tr><th scope="row">Healing Narcissistic Wounds</th><td>$497</td><td>6 sales ($2,982)</td></tr>
+        <tr><th scope="row">Healing Childhood Wounds</th><td>$395</td><td>7 sales ($2,765)</td></tr>
+        <tr><th scope="row">Both together</th><td>$665</td><td>4 sales ($2,660)</td></tr></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section id="terms" aria-labelledby="terms-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">06</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
+    <table class="tb">
+      <tbody>
+        <tr><th scope="row">Billing</th><td>You pay each month in advance, by card or invoice. There is no setup fee.</td></tr>
+        <tr><th scope="row">Your current plan</th><td>The $2,500 plan replaces your $300 Shorts plan. The 22 Shorts still owed from this month come on top, at no extra cost.</td></tr>
+        <tr><th scope="row">Cancel</th><td>Any time before your next billing date, by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise above.</td></tr>
+        <tr><th scope="row">Tools</th><td>Our team pays for and runs every tool while the plan runs. If you stop, you choose: we hand the tool accounts over to you and you pay for them from then on, or we send you your full email list as a file and close them.</td></tr>
+        <tr><th scope="row">What's yours</th><td>Your social accounts, your email list, your videos and your pages.</td></tr>
+        <tr><th scope="row">When we start</th><td>Posting starts within 48 hours of your payment. Your first funnel is live within 14 days of your access. For that we need your Instagram set as a business account linked to a Facebook Page, and access to your site.</td></tr>
+        <tr><th scope="row">Approvals</th><td>You approve the first video in each new style, and every email. If we don't hear from you in 48 hours, videos in a style you approved go out on schedule, and emails wait for you.</td></tr>
+        <tr><th scope="row">Replies</th><td>You get an answer the same day, every day of the week.</td></tr>
+        <tr><th scope="row">A failed payment</th><td>We tell you at once and keep working for 7 days. After that, posting and the funnel pause until it's fixed.</td></tr>
+      </tbody>
+    </table>
+    <p class="note noprint"><span class="draft">Internal: to verify before sending: the message tool can check a follow on her account type; Benas confirms the two clips in section 10 can go on a client scope.</span></p>
+  </div>
+</section>
+
+<section class="band" id="detail" aria-labelledby="detail-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">07</span>Every part in detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
+      <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
+    <div class="dt">
+      <div class="dcard"><div><span class="k">01</span><h3>New videos every day</h3><p class="lbl">What we do</p><p>We make two or three new Shorts for you every day. We watch each long video from start to end and mark the lines people will relate to most. Each line becomes a video of 30 to 50 seconds. It opens on a yellow question while you start talking. Your WTFreud! lettering stays on screen, and it closes on your end card.</p><p class="lbl">Your part</p><p>Approve the first video in each style. After that, you only tell us when something feels wrong.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>From your talk on why we love people who keep hurting us, one Short opens on “Why do we love people who hurt us?” It ends on your line about being blueprinted that way.</p></div></div>
+      <div class="dcard"><div><span class="k">02</span><h3>Posted on all your channels</h3><p class="lbl">What we do</p><p>We post your videos for you on Instagram, TikTok, YouTube Shorts and Facebook, every day, on a calendar you can see. Each post gets its own title, description and hashtags, written for that channel. Your show days and your webinar dates get their own posts.</p><p class="lbl">Your part</p><p>Give us access once, through your assistant. We never ask for a password by email.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Monday's video goes out on Instagram, TikTok, YouTube Shorts and Facebook, each with its own title and hashtags.</p></div></div>
+      <div class="dcard"><div><span class="k">03</span><h3>Your show</h3><p class="lbl">What we do</p><p>We edit the full episode, post it, and tell your email list and your pages that it's out. Then we make the next weeks' Shorts from the same episode.</p><p class="lbl">Your part</p><p>Record as you do now, and share the file.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>One recording becomes a full episode, about a dozen Shorts, and one email to your list.</p></div></div>
+      <div class="dcard"><div><span class="k">04</span><h3>The keyword funnel, for followers</h3><p class="lbl">What we do</p><p>This is how a viewer becomes a follower and a contact. Each video invites people to comment one word. When someone comments, your page sends them a private message within seconds. The message offers your free chapter. The chapter is only for people who follow you, so it asks for a follow first, and then for their email address. The comments also tell the platform that people care, so it shows the video to more people.</p><p class="lbl">Your part</p><p>Choose the word, and approve the message once.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>“Comment HEAL and I'll send you the first chapter.” A viewer comments HEAL at 11 pm. One minute later they follow you, they have your chapter, and you have their email address.</p></div></div>
+      <div class="dcard"><div><span class="k">05</span><h3>Welcome emails</h3><p class="lbl">What we do</p><p>A new contact gets five short emails in their first two weeks. The first one delivers the chapter. The next ones share your teaching and explain what your program covers. The last one invites them to the program or to a free consultation. We write them in your voice.</p><p class="lbl">Your part</p><p>Approve the five emails once. Then they run for every new contact.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Day 1: the chapter. Day 3: one idea from your work. Day 6: a story. Day 9: what the program covers. Day 13: the invitation.</p></div></div>
+      <div class="dcard"><div><span class="k">06</span><h3>Weekly email</h3><p class="lbl">What we do</p><p>Once a week, your whole list hears from you. We take that week's strongest video, turn it into a few written lines, and add a link to your program, your show or your next webinar.</p><p class="lbl">Your part</p><p>Approve it with one reply.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>A Thursday email with one idea and one link. It takes two minutes to read.</p></div></div>
+      <div class="dcard"><div><span class="k">07</span><h3>Consultation booking</h3><p class="lbl">What we do</p><p>Today your free consultation is a form, and someone has to call each person back. We add a calendar to your site. People pick a time themselves, and reminders go to them before the call. The calendar asks no health questions.</p><p class="lbl">Your part</p><p>Open the hours that work for you. You can change them whenever you like.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>You open Tuesdays and Thursdays from 2 to 4. A new contact books Thursday at 2:30, and it lands in your calendar.</p></div></div>
+      <div class="dcard"><div><span class="k">08</span><h3>Sites that sell</h3><p class="lbl">What we do</p><p>You built your sites, and they look like you. We keep that look and fix what stops visitors from taking the next step: a button that leads nowhere, a page that loads slowly, a download that asks for nothing. We also build email sign-up into each site. Section 08 lists the fixes site by site.</p><p class="lbl">Your part</p><p>Choose how far we go on each site: Polish, Refresh or Rebuild. Nothing changes without your OK.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>On healingnarcissisticwounds.com, the free chapter asks for an email address first. From then on, every download adds a person to your list.</p></div></div>
+      <div class="dcard"><div><span class="k">09</span><h3>Book launch</h3><p class="lbl">What we do</p><p>Your new book comes out in February, so the list should start growing now. We build a waitlist page with the first chapter as the gift. Then we make videos on the book's ideas. In launch week, everyone on the waitlist gets your emails.</p><p class="lbl">Your part</p><p>Send us the chapter, the cover and your launch date.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Someone joins the waitlist in December. On launch day they get an email with the link to buy.</p></div></div>
+      <div class="dcard"><div><span class="k">10</span><h3>Webinars</h3><p class="lbl">What we do</p><p>When you want to run one, we do everything around it: the sign-up page, the invitations to your list, the reminders, the room, and the tech on the day. Afterwards we send the replay and the follow-up emails.</p><p class="lbl">Your part</p><p>Choose the topic, and teach.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>A one-hour class on healing after narcissistic abuse. At the end you present your program, and the replay goes to everyone who signed up.</p></div></div>
+      <div class="dcard"><div><span class="k">11</span><h3>The Gift House</h3><p class="lbl">What we do</p><p>Your home is also a business: productions rent it for film and photo shoots. Today a scout can only phone, and the first photo on the site looks soft. We replace that photo with your new living-room picture and add an inquiry form with what scouts need to know. When you film the house, we turn the footage into short videos.</p><p class="lbl">Your part</p><p>Take the new photos when your carpet arrives. A phone walk-through of the house is enough for the first videos.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>A location scout finds the site at night, fills in the form with the shoot dates, and you have the request in the morning.</p></div></div>
+      <div class="dcard"><div><span class="k">12</span><h3>Weekly report and strategy calls</h3><p class="lbl">What we do</p><p>Each week you get one short page: what we posted, which videos did best, how many new followers and email addresses came in, and what we do next. On our calls we plan the coming weeks together.</p><p class="lbl">Your part</p><p>Pick the call times that suit you, and tell us what matters most that month.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>“This week: 7 videos posted, 41 new email addresses, best video: the question about empathy.” These numbers only show the format.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="sites" aria-labelledby="sites-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">08</span>Your websites</p><h2 id="sites-h">Four sites. <span class="gold">You choose how far we go.</span></h2>
+      <p class="lede">We keep your look on every site. For each one, pick a depth. You can change it later, and nothing goes live without your OK.</p></div>
+    <div class="levels">
+      <div><b>Polish</b><span>We fix what is broken and add email sign-up. Your pages stay as they are.</span></div>
+      <div><b>Refresh</b><span>Polish, plus a cleaner layout and clearer buttons on your main pages. Same look.</span></div>
+      <div><b>Rebuild</b><span>A new structure for the site, designed by us in your look, page by page with you.</span></div>
+    </div>
+    <div class="sites">
+      <div class="site"><h3>healingnarcissisticwounds.com</h3><p class="what">Your main site, and the first funnel we connect.</p><ul><li>The free chapter asks for an email address before the download.</li><li>The “2-Minute Quiz” button leads to a working quiz, not a missing page.</li><li>Your program, its price and one clear button show before any scrolling.</li><li>The free consultation gets a calendar, so people book a time themselves.</li><li>Reviews and a short questions list sit on the program page, next to the buy button.</li></ul>
+        <div class="pick noprint" role="radiogroup" aria-label="How far we go on healingnarcissisticwounds.com"><label><input type="radio" name="pick-hnw" id="pick-hnw-polish" value="Polish"><span>Polish</span></label><label><input type="radio" name="pick-hnw" id="pick-hnw-refresh" value="Refresh" checked><span>Refresh</span></label><label><input type="radio" name="pick-hnw" id="pick-hnw-rebuild" value="Rebuild"><span>Rebuild</span></label></div></div>
+      <div class="site"><h3>healingchildhoodwounds.com</h3><p class="what">The home of your second program and the new book.</p><ul><li>Its own title, so Google stops reading it as a copy of your other site.</li><li>The opening video shows a still picture and plays on a tap, so the page loads fast.</li><li>A waitlist for the February book, with the first chapter as the gift.</li><li>Reviews next to the buy button.</li><li>One page and one price for the program, wherever people come from.</li></ul>
+        <div class="pick noprint" role="radiogroup" aria-label="How far we go on healingchildhoodwounds.com"><label><input type="radio" name="pick-hcw" id="pick-hcw-polish" value="Polish"><span>Polish</span></label><label><input type="radio" name="pick-hcw" id="pick-hcw-refresh" value="Refresh" checked><span>Refresh</span></label><label><input type="radio" name="pick-hcw" id="pick-hcw-rebuild" value="Rebuild"><span>Rebuild</span></label></div></div>
+      <div class="site"><h3>psychologicalhealingcenter.com</h3><p class="what">The site for your practice.</p><ul><li>A shorter menu, so new visitors find the consultation in one step.</li><li>A sharper first photo.</li><li>A proper title and description for Google.</li><li>Free downloads ask for an email address, not a phone number.</li><li>Online booking for the free 15-minute consultation.</li></ul>
+        <div class="pick noprint" role="radiogroup" aria-label="How far we go on psychologicalhealingcenter.com"><label><input type="radio" name="pick-phc" id="pick-phc-polish" value="Polish"><span>Polish</span></label><label><input type="radio" name="pick-phc" id="pick-phc-refresh" value="Refresh" checked><span>Refresh</span></label><label><input type="radio" name="pick-phc" id="pick-phc-rebuild" value="Rebuild"><span>Rebuild</span></label></div></div>
+      <div class="site"><h3>thegifthousela.com</h3><p class="what">Your home as a film and photo location.</p><ul><li>A new landscape first photo, once your carpet is in.</li><li>An inquiry form with what a scout needs: dates, crew size, type of shoot.</li><li>Lighter gallery pictures, so the page opens fast on a phone.</li><li>Your past productions shown as credits near the top.</li></ul>
+        <div class="pick noprint" role="radiogroup" aria-label="How far we go on thegifthousela.com"><label><input type="radio" name="pick-gh" id="pick-gh-polish" value="Polish"><span>Polish</span></label><label><input type="radio" name="pick-gh" id="pick-gh-refresh" value="Refresh" checked><span>Refresh</span></label><label><input type="radio" name="pick-gh" id="pick-gh-rebuild" value="Rebuild"><span>Rebuild</span></label></div></div>
+    </div>
+    <p class="picksum noprint">Your picks stay on this page on your device. <a id="pick-mail" href="mailto:ben@getbejucreative.com?subject=My%20website%20picks%20(BEJ-2026-0123)">Email my picks to Benas</a></p>
+  </div>
+</section>
+
+<section class="band" id="road" aria-labelledby="road-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">09</span>Your first 90 days</p><h2 id="road-h">From your payment to <span class="gold">your book launch</span></h2>
+      <p class="lede">Your book comes out in February. Here is the order of the work until then.</p></div>
+    <table class="tb">
+      <tbody>
+        <tr><th scope="row">Day 0</th><td>You pay the first month. Your onboarding form opens, and we connect with Joriz.</td></tr>
+        <tr><th scope="row">Within 48 hours</th><td>Daily posting starts, in your new look, on all four platforms.</td></tr>
+        <tr><th scope="row">Within 14 days of access</th><td>Your first funnel is live, for Healing Narcissistic Wounds. The 30-day promise starts counting here.</td></tr>
+        <tr><th scope="row">Weeks 3–4</th><td>Welcome emails and your first weekly emails go out. The booking calendar opens. The first site fixes go live.</td></tr>
+        <tr><th scope="row">Month 2</th><td>The second funnel, for Healing Childhood Wounds, and the book waitlist. The next site work, at the depth you chose.</td></tr>
+        <tr><th scope="row">Month 3</th><td>Videos and emails that prepare your list for the book.</td></tr>
+        <tr><th scope="row">February</th><td>Launch week: your waitlist gets the link, and your pages carry the launch.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <section class="proof" id="trust" aria-labelledby="trust-h">
   <div class="wrap">
-    <div class="head"><p class="eyebrow">Trusted by</p><h2 id="trust-h">Who we already <span class="gold">work with</span></h2></div>
+    <div class="head"><p class="eyebrow"><span class="secno">10</span>Trusted by</p><h2 id="trust-h">Who we already <span class="gold">work with</span></h2></div>
     <div class="proof-card" style="margin-top:26px">
       <div class="proof-logos">
         <a class="proof-item" href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="https://bejucreative.digital/assets/based-wordmark.svg" alt="BASED" width="211" height="48"><span class="tt">View on TikTok ↗</span></a>
@@ -438,138 +711,42 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         <div><b>97%</b><span>stay after the first month</span></div>
       </div>
     </div>
-    <div class="works">
+    <div class="works noprint">
       <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/sam-zia-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/sam-zia.jpg"></video></div>
         <div><h3>Sam Zia</h3><p>A Short from our work with Sam Zia. Press play to see the opening, the pace and the captions.</p></div></div>
       <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/based-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/based.jpg"></video></div>
         <div><h3>BASED</h3><p>A Short from our work with BASED. Your videos get the same care, in your own look.</p></div></div>
-    </div>
-    <p class="note"><span class="draft">Both clips are the ones on our live website. Benas to confirm they can go on a client scope.</span></p>
-  </div>
-</section>
-
-<section class="band" id="plan" aria-labelledby="plan-h">
-  <div class="wrap wrapw">
-    <div class="head"><p class="eyebrow">Your plan</p><h2 id="plan-h">What you get, <span class="gold">side by side</span></h2>
-      <p class="lede">Two ways to work with us. Every row says what it is, in one line. The last column shows what other firms list for that one piece on its own.</p></div>
-    <div class="cmpwrap"><table class="cmp">
-      <thead><tr><th></th>
-        <th class="main"><span class="pill">Recommended</span><b>Sales Engine: Full Business</b><span class="pr">$2,500 <small>a month</small></span><span class="sub">Everything, run for you as one team. Tool costs are covered by us.</span></th>
-        <th><span class="pill">Small start</span><b>Lead Magnet Test</b><span class="pr">$600 <small>a month</small></span><span class="sub">One funnel and posting, next to your $300 Shorts plan.</span></th>
-        <th><span class="pill">What others charge</span><b>For that one piece alone</b><span class="sub">Listed prices from other firms.</span></th></tr></thead>
-      <tbody>
-        <tr class="grp"><th colspan="4">Your videos</th></tr>
-        <tr><th scope="row"><b>Shorts in your look</b><span>Your best lines as 30–50 second videos: a yellow question first, your WTFreud! lettering, your end card.</span></th><td class="yes"><span class="ok"><span>60–90 a month, more when needed</span></span></td><td>Your 30 a month continue, on your current $300 plan</td><td class="val"><b>ShortVids, Fame Clips</b>$2,350–$4,999 a month for 60–95 Shorts</td></tr>
-        <tr><th scope="row"><b>Daily posting</b><span>We post for you on TikTok, Instagram, Facebook and YouTube Shorts, with titles, descriptions and hashtags.</span></th><td class="yes"><span class="ok"><span>Every day</span></span></td><td><span class="ok"><span>Every day</span></span></td><td class="val"><b>Social media agencies</b>$500–$5,000 a month. WebFX starts at $3,150.</td></tr>
-        <tr><th scope="row"><b>Your show</b><span>Each long episode edited, posted and announced to your list.</span></th><td class="yes"><span class="ok"><span>2 episodes a month</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>PodQuake, Cashflow Podcasting</b>$300–$1,199 a month</td></tr>
-        <tr class="grp"><th colspan="4">Your sales funnel</th></tr>
-        <tr><th scope="row"><b>Keyword funnel, for followers</b><span>Viewers comment one word. Your page messages them, asks them to follow you, and sends your free chapter in exchange for their email address.</span></th><td class="yes"><span class="ok"><span>2 funnels: Healing Narcissistic Wounds first, then Healing Childhood Wounds and the book</span></span></td><td><span class="ok"><span>1 funnel: Healing Narcissistic Wounds</span></span></td><td class="val"><b>Contra, ManyPixels</b>$279 one time, up to $1,199 a month, for the page design alone</td></tr>
-        <tr><th scope="row"><b>Welcome emails</b><span>Five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes"><span class="ok"><span>5 per funnel</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Contra freelancers</b>about $1,500 per sequence</td></tr>
-        <tr><th scope="row"><b>Weekly email</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes"><span class="ok"><span>4 a month</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Email agencies</b>$300–$2,000 a month</td></tr>
-        <tr><th scope="row"><b>Consultation booking</b><span>A calendar on your site. You open the hours that work for you, and people book themselves.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
-        <tr class="grp"><th colspan="4">Your websites</th></tr>
-        <tr><th scope="row"><b>Sites that convert</b><span>We keep your look and make each site sell: small errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes"><span class="ok"><span>Your three sites, on a plan we agree with you</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Twine, Linear Design, Invesp</b>$500–$3,000 per page, or $2,000–$5,000 a month</td></tr>
-        <tr class="grp"><th colspan="4">Your bigger moments</th></tr>
-        <tr><th scope="row"><b>Book launch</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Book marketing firms</b>$3,000–$7,500 per launch</td></tr>
-        <tr><th scope="row"><b>Webinars</b><span>When you want to run one: the sign-up page, reminders, the room, the tech on the day, the replay and the follow-up emails.</span></th><td class="yes"><span class="ok"><span>Included, whenever you want one</span></span></td><td><span class="no">Not included</span></td><td class="val"><b>Webinar producers</b>$500–$5,000 per event</td></tr>
-        <tr><th scope="row"><b>The Gift House</b><span>Your home as a film and photo location: a sharper first photo on the site, an inquiry form for scouts, and videos made from footage you film.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="no">Not included</span></td><td class="val"></td></tr>
-        <tr class="grp"><th colspan="4">Working with us</th></tr>
-        <tr><th scope="row"><b>All the tools, paid by our team</b><span>The message tool, the email sender, the booking calendar and the webinar room. Our team pays for them and runs them. You pay nothing extra.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
-        <tr><th scope="row"><b>Weekly report</b><span>What we posted, which videos did best, new email addresses, what comes next.</span></th><td class="yes"><span class="ok"><span>Every week</span></span></td><td>A monthly summary</td><td class="val"></td></tr>
-        <tr><th scope="row"><b>Strategy calls</b><span>Time with Benas and Simas to plan the next weeks. You pick the times that suit you.</span></th><td class="yes"><span class="ok"><span>4 a month, and you can book more</span></span></td><td><span class="ok"><span>4 a month</span></span></td><td class="val"><b>Marketing advisers</b>$2,000–$5,000 a month</td></tr>
-        <tr class="tot"><th scope="row"><b>Every month, in total</b><span>The Full plan replaces your $300 Shorts plan. The 22 Shorts still owed this month come on top, at no extra cost.</span></th><td class="yes">$2,500</td><td>$900<span style="display:block;font-size:15px;font-weight:400;color:var(--body);letter-spacing:0">$600 plus your $300 Shorts plan</span></td><td class="val">$5,450–$18,198 a month for the monthly pieces alone</td></tr>
-      </tbody>
-    </table></div>
-    <p class="note"><span class="draft">“What others charge”: listed price ranges from Benas's side's research (Simas chose ranges with named firms). Each figure needs its link in a footnote before this is sent. The total adds the monthly rows: Shorts, posting, show, weekly emails and advisers.</span></p>
-
-    <div class="guar">
-      <p class="eyebrow">Our guarantee · Sales Engine: Full Business</p>
-      <h3>No program sale in your first 30 days? <span>You choose: one more month free, or your first month back.</span></h3>
-      <ul>
-        <li>The 30 days start when your first funnel goes live.</li>
-        <li>Any sale of your $395 or $497 program counts.</li>
-        <li>On day 30 we check with you and offer the choice ourselves. You don't have to ask.</li>
-        <li>The 30 days pause while we wait more than 48 hours for an approval from you, or while your checkout is down.</li>
-        <li>If you choose the refund, we pay it within 14 days and the plan ends. You keep your videos and your email list, and the funnel tools switch off.</li>
-        <li>This guarantee comes before the “no refunds on delivered work” line in our terms.</li>
-      </ul>
-    </div>
-
-    <h3 class="subh" id="terms">The terms, in plain words</h3>
-    <table class="tt2">
-      <tbody>
-        <tr><th scope="row">Billing</th><td>You pay each month in advance, by card or invoice. There is no setup fee.</td></tr>
-        <tr><th scope="row">Your current plan</th><td>The $2,500 plan replaces your $300 Shorts plan. The 22 Shorts still owed from this month come on top, at no extra cost.</td></tr>
-        <tr><th scope="row">Cancel</th><td>Any time before your next billing date, by email. You keep everything delivered. No refunds on delivered work, apart from the guarantee above.</td></tr>
-        <tr><th scope="row">Tools</th><td>Our team pays for and runs every tool. If you stop, we send you your full email list as a file and close the tool accounts.</td></tr>
-        <tr><th scope="row">What's yours</th><td>Your social accounts, your email list, your videos and your pages.</td></tr>
-        <tr><th scope="row">Your first funnel</th><td>Live within 7 days of your payment and access to your accounts.</td></tr>
-        <tr><th scope="row">Approvals</th><td>You approve the first video in each new style, and every email. If we don't hear from you in 48 hours, videos in a style you approved go out on schedule, and emails wait for you.</td></tr>
-        <tr><th scope="row">Replies</th><td>You get an answer the same day, every day of the week.</td></tr>
-        <tr><th scope="row">A failed payment</th><td>We tell you at once and keep working for 7 days. After that, posting and the funnel pause until it's fixed.</td></tr>
-      </tbody>
-    </table>
-    <p class="note"><span class="draft">Internal: Simas's term answers of 11-21, sent to Benas for his view. Not on the page by choice: a privacy line (we ask her what her practice allows before the booking calendar is built) and portfolio rights (decide later). To verify before sending: the message tool can check a follow on her account.</span></p>
-  </div>
-</section>
-
-<section id="detail" aria-labelledby="detail-h">
-  <div class="wrap">
-    <div class="head"><p class="eyebrow">Every part in detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
-      <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
-    <div class="dt">
-      <div class="dcard"><div><span class="k">01</span><h3>Shorts in your look</h3><p class="lbl">What we do</p><p>We watch each long video from start to end and mark the lines people will relate to most. Each line becomes a video of 30 to 50 seconds. It opens on a yellow question while you start talking. Your WTFreud! lettering stays on screen, and it closes on your end card.</p><p class="lbl">Your part</p><p>Approve the first video in each style. After that, you only tell us when something feels wrong.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>From your talk on why we love people who keep hurting us, one Short opens on “Why do we love people who hurt us?” It ends on your line about being blueprinted that way.</p></div></div>
-      <div class="dcard"><div><span class="k">02</span><h3>Daily posting</h3><p class="lbl">What we do</p><p>We keep a calendar with one video a day. Each post gets its own title, description and hashtags, written for that platform. Your show days and your webinar dates get their own posts.</p><p class="lbl">Your part</p><p>Give us access once, through your assistant. We never ask for a password by email.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Monday's video goes out on TikTok, Instagram, Facebook and YouTube Shorts, each with its own title and hashtags.</p></div></div>
-      <div class="dcard"><div><span class="k">03</span><h3>Your show</h3><p class="lbl">What we do</p><p>We edit the full episode, post it, and tell your email list and your pages that it's out. Then we cut the same episode into the next weeks' Shorts.</p><p class="lbl">Your part</p><p>Record as you do now, and share the file.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>One recording becomes a full episode, about a dozen Shorts, and one email to your list.</p></div></div>
-      <div class="dcard"><div><span class="k">04</span><h3>The keyword funnel</h3><p class="lbl">What we do</p><p>This is how a viewer becomes a contact. Each video invites people to comment one word. When someone comments, your page sends them a private message within seconds. The message offers your free chapter. The chapter is only for people who follow you, so it asks for a follow first, and then for their email address. So every new contact is also a new follower.</p><p class="lbl">Your part</p><p>Choose the word, and approve the message once.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>“Comment HEAL and I'll send you the first chapter, free.” A viewer comments HEAL at 11 pm. One minute later they follow you, they have your chapter, and you have their email address.</p></div></div>
-      <div class="dcard"><div><span class="k">05</span><h3>Welcome emails</h3><p class="lbl">What we do</p><p>A new contact gets five short emails in their first two weeks. The first one delivers the chapter. The next ones share your teaching and explain what your program covers. The last one invites them to the program or to a free consultation. We write them in your voice.</p><p class="lbl">Your part</p><p>Approve the five emails once. Then they run for every new contact.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Day 1: the chapter. Day 3: one idea from your work. Day 6: a story. Day 9: what the program covers. Day 13: the invitation.</p></div></div>
-      <div class="dcard"><div><span class="k">06</span><h3>Weekly email</h3><p class="lbl">What we do</p><p>Once a week, your whole list hears from you. We take that week's strongest video, turn it into a few written lines, and add a link to your program, your show or your next webinar.</p><p class="lbl">Your part</p><p>Approve it with one reply.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>A Thursday email with one idea and one link. It takes two minutes to read.</p></div></div>
-      <div class="dcard"><div><span class="k">07</span><h3>Consultation booking</h3><p class="lbl">What we do</p><p>Today your free consultation is a form, and someone has to call each person back. We add a calendar to your site. People pick a time themselves, and reminders go to them before the call.</p><p class="lbl">Your part</p><p>Open the hours that work for you. You can change them whenever you like.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>You open Tuesdays and Thursdays from 2 to 4. A new contact books Thursday at 2:30, and it lands in your calendar.</p></div></div>
-      <div class="dcard"><div><span class="k">08</span><h3>Sites that convert</h3><p class="lbl">What we do</p><p>Your sites keep their look. We fix what stops visitors from taking the next step, and we build email sign-up into each site. We already found three quick fixes. The quiz button on your main site leads to a missing page. Your free chapter downloads without asking for an email address. And the Healing Childhood Wounds site still carries the other site's title.</p><p class="lbl">Your part</p><p>Choose how far we go on each site. Nothing changes without your OK.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>On healingnarcissisticwounds.com, the free chapter asks for an email address first. From then on, every download adds a person to your list.</p></div></div>
-      <div class="dcard"><div><span class="k">09</span><h3>Book launch</h3><p class="lbl">What we do</p><p>Your new book comes out in February, so the list should start growing now. We build a waitlist page with the first chapter as the gift. Then we make videos on the book's ideas. In launch week, everyone on the waitlist gets your emails.</p><p class="lbl">Your part</p><p>Send us the chapter, the cover and your launch date.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Someone joins the waitlist in December. On launch day they get an email with the link to buy.</p></div></div>
-      <div class="dcard"><div><span class="k">10</span><h3>Webinars</h3><p class="lbl">What we do</p><p>When you want to run one, we do everything around it: the sign-up page, the invitations to your list, the reminders, the room, and the tech on the day. Afterwards we send the replay and the follow-up emails.</p><p class="lbl">Your part</p><p>Choose the topic, and teach.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>A one-hour class on healing after narcissistic abuse. At the end you present your program, and the replay goes to everyone who signed up.</p></div></div>
-      <div class="dcard"><div><span class="k">11</span><h3>The Gift House</h3><p class="lbl">What we do</p><p>Your home is also a business: productions rent it for film and photo shoots. Today a scout can only phone, and the first photo on the site looks soft. We replace that photo with your new living-room picture and add an inquiry form with what scouts need to know. When you film the house, we turn the footage into short videos.</p><p class="lbl">Your part</p><p>Take the new photos when your carpet arrives. A phone walk-through of the house is enough for the first videos.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>A location scout finds the site at night, fills in the form with the shoot dates, and you have the request in the morning.</p></div></div>
-      <div class="dcard"><div><span class="k">12</span><h3>Weekly report and strategy calls</h3><p class="lbl">What we do</p><p>Each week you get one short page: what we posted, which videos did best, how many new email addresses came in, and what we do next. On our calls we plan the coming weeks together.</p><p class="lbl">Your part</p><p>Pick the call times that suit you, and tell us what matters most that month.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>“This week: 7 videos posted, 41 new email addresses, best video: the question about empathy.” These numbers only show the format.</p></div></div>
     </div>
   </div>
 </section>
 
 <section class="band" id="after" aria-labelledby="after-h">
   <div class="wrap">
-    <div class="head"><p class="eyebrow">After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2>
+    <div class="head"><p class="eyebrow"><span class="secno">11</span>After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2>
       <p class="lede">No kickoff meetings and no waiting. This is what happens next.</p></div>
     <div class="steps4">
       <div class="card"><span class="num">1</span><h3>Your onboarding form</h3><p class="small">Right after you pay, a two-minute form opens: your accounts, your brand files, and where each video should send people. Benas also emails you the link.</p></div>
       <div class="card"><span class="num">2</span><h3>We connect with Joriz</h3><p class="small">The same day, she shows us your accounts once. From there we post, and she keeps the parts you choose.</p></div>
-      <div class="card"><span class="num">3</span><h3>Your first funnel, for approval</h3><p class="small">The keyword funnel for Healing Narcissistic Wounds comes to you first. Once you like it, it goes live, within 7 days of your payment and access.</p></div>
-      <div class="card"><span class="num">4</span><h3>Daily posts, weekly report</h3><p class="small">Videos go out every day. The other funnels, the emails and the site work follow in order, and you get a report each week.</p></div>
+      <div class="card"><span class="num">3</span><h3>Posting starts</h3><p class="small">Within 48 hours of your payment, your videos go out every day on all four platforms.</p></div>
+      <div class="card"><span class="num">4</span><h3>Your first funnel, for approval</h3><p class="small">The keyword funnel for Healing Narcissistic Wounds comes to you first. Once you like it, it goes live, within 14 days of your access.</p></div>
     </div>
   </div>
 </section>
 
 <section id="faq" aria-labelledby="faq-h">
   <div class="wrap cols">
-    <div class="head"><p class="eyebrow">Good to know</p><h2 id="faq-h">Questions</h2></div>
+    <div class="head"><p class="eyebrow"><span class="secno">12</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
     <div>
       <details open><summary>Who owns my accounts and my email list?</summary><p>You do. Your social accounts, your email list, your videos and your pages stay yours. We run them for you.</p></details>
-      <details><summary>How does the guarantee work?</summary><p>It covers the Sales Engine: Full Business plan. If no $395 or $497 program sells in the 30 days after your first funnel goes live, we offer you the choice on day 30: one more month free, or your first month refunded within 14 days. With the refund the plan ends, and you keep your videos and your email list.</p></details>
+      <details><summary>Why do viewers have to follow my page to get the chapter?</summary><p>So that every person who asks for your chapter also becomes a follower. Your audience grows with each comment, and you can reach those people again with every new video.</p></details>
+      <details><summary>How does the 30-day promise work?</summary><p>It covers the Sales Engine: Full Business plan. On day 30 after your first funnel goes live, we check with you and you show us your sales report. If no $395 or $497 program sold, alone or together, you choose: one more month free, or your first month refunded within 14 days. With the refund the plan ends, and you keep your videos and your email list.</p></details>
+      <details><summary>Do I pay for any software?</summary><p>No. Our team pays for and runs every tool we use for you: the message tool, the email sender, the booking calendar and the webinar room. It is all inside your monthly price.</p></details>
       <details><summary>Do I have to approve everything?</summary><p>You approve the first videos in each new style and every email before it goes out. The rest follows what you approved.</p></details>
-      <details><summary>Do I pay for any software?</summary><p>No. Our team pays for and runs every tool we use for you: the message tool, the email sender, the booking calendar and the webinar room. It is all inside your monthly price. If you ever stop, we send you your full email list as a file.</p></details>
+      <details><summary>What about the privacy of my clients?</summary><p>We work with marketing contacts only: a name and an email address. The booking calendar asks no health questions. Before we build it, you tell us what your practice allows, and we follow that.</p></details>
+      <details><summary>Will you show my videos to other people?</summary><p>Only if you say yes. We ask you first, each time.</p></details>
       <details><summary>What happens with my assistant?</summary><p>That's your call. We take over posting and growing your social accounts. She can keep any other work she does for you.</p></details>
       <details><summary>What if I don't like a video?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
-      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work, apart from the guarantee.</p></details>
+      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work, except the 30-day promise above.</p></details>
     </div>
   </div>
 </section>
@@ -594,24 +771,67 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       <p class="eyebrow">Next step</p>
       <h2 id="ready" style="margin-top:12px">Ready when you are</h2>
       <p class="lede">Pick your plan and pay the first month. We start the same day.</p>
-      <p class="small" style="margin-top:14px"><span class="draft">Pay button comes when the price is final and the Stripe link exists.</span></p>
+      <p class="small noprint" style="margin-top:14px"><span class="draft">Internal: the pay button comes when both founders give the go and the Stripe link exists.</span></p>
       <div class="btns noprint">
         <a class="btn ghost" href="mailto:ben@getbejucreative.com?subject=Invoice%20for%20Psychological%20Healing%20Center%20(BEJ-2026-0123)">Request an invoice</a>
+        <a class="btn ghost" href="Dr-Judy-Scope-BEJU-Creative.pdf" download>Download PDF</a>
       </div>
       <div class="call">
         <p>Rather talk it through first?</p>
         <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
       </div>
       <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
-      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
+      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise above. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
     </div>
   </div>
 </section>
-<footer><div class="wrap"><span><img class="foot-mark" src="https://bejucreative.digital/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Questions? Reply to Benas's email.</span></div></footer>
+<footer><div class="wrap"><span><img class="foot-mark" src="https://bejucreative.digital/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Scope BEJ-2026-0123 · Questions? Reply to Benas's email.</span></div></footer>
 <script>
 const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
 if (location.search.includes("print")) openAll();
 addEventListener("beforeprint", openAll);
+
+// break-even: arithmetic with her own prices
+(function(){
+  const price = document.getElementById("be-price"), n = document.getElementById("be-n");
+  if (!price || !n) return;
+  const fmt = v => "$" + Math.abs(v).toLocaleString("en-US");
+  function draw(){
+    const rev = Number(price.value) * Number(n.value), left = rev - 2500;
+    document.getElementById("be-nv").textContent = n.value;
+    document.getElementById("be-rev").textContent = fmt(rev);
+    document.getElementById("be-left").textContent = (left >= 0 ? "+" : "−") + fmt(left);
+    document.getElementById("be-msg").textContent = left >= 0 ? "left after the plan" : "short of the plan that month";
+    document.getElementById("be-box").className = left >= 0 ? "pos" : "";
+  }
+  price.addEventListener("change", draw); n.addEventListener("input", draw); draw();
+})();
+
+// website picks: remembered on this device only, and put into the email link
+(function(){
+  const sites = {hnw:"healingnarcissisticwounds.com", hcw:"healingchildhoodwounds.com", phc:"psychologicalhealingcenter.com", gh:"thegifthousela.com"};
+  const KEY = "judy-scope-site-picks", mail = document.getElementById("pick-mail");
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  function current(){
+    const out = {};
+    for (const k in sites){ const r = document.querySelector('input[name="pick-' + k + '"]:checked'); if (r) out[k] = r.value; }
+    return out;
+  }
+  function sync(){
+    const cur = current();
+    try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {}
+    if (mail){
+      const lines = Object.keys(sites).map(k => sites[k] + ": " + (cur[k] || "not chosen"));
+      mail.href = "mailto:ben@getbejucreative.com?subject=" + encodeURIComponent("My website picks (BEJ-2026-0123)") + "&body=" + encodeURIComponent("Hi Benas,\n\nMy picks:\n" + lines.join("\n") + "\n\nDr. Judy");
+    }
+  }
+  for (const k in sites){
+    if (saved[k]){ const r = document.getElementById("pick-" + k + "-" + saved[k].toLowerCase()); if (r) r.checked = true; }
+    document.querySelectorAll('input[name="pick-' + k + '"]').forEach(r => r.addEventListener("change", sync));
+  }
+  sync();
+})();
 </script>
 </body>
 </html>
