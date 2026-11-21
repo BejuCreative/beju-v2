@@ -542,6 +542,7 @@ const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 /* 11-21 (BENAS): hidden, code kept. moneypage: crm/money.html is 404 on the live site. Client portal zone: videos,
    sample_requests, purchases, video_notes, video_versions all have 0 rows. Take an id out of this set to show it again. */
 const HIDDEN = new Set(["moneypage", "portal", "psamples", "pvideos", "pnotes", "pclients"]);
+const keyLabel = k => String(k || "").replace(/_/g, " ").replace(/^./, c => c.toUpperCase());   // an attention kind with no label yet reads as words, not a raw key
 const CARDS = [
 { id: "brand", cls: "brand", title: "Status", mount(el) {
     el.innerHTML = `<div class="brand-top"><button type="button" class="brandrow" data-act="drill" data-k="me" data-a="" title="Your login and the shortcuts"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span class="bt"><b>BEJÚ</b><small>Founder CRM</small></span></button>
@@ -606,9 +607,9 @@ const CARDS = [
 { id: "moods", title: "Buyer moods", render: d => `${head("Buyer moods")}
     <div class="tile row-pad"><div class="segbar">${d.moods.map(m => `<button type="button" class="${m.c}" data-act="drill" data-k="mood" data-a="${m.k}" data-v="g:${m.n}" title="${m.label}: ${m.n}" aria-label="${m.label}: ${m.n} leads. Open them."></button>`).join("")}</div>
     <div class="legend">${d.moods.map(m => dB("mood", m.k, `<i class="dot ${m.c}"></i><span>${m.label}</span><b>${m.n}</b>`, "lg")).join("") || empty("No leads.")}</div></div>` },
-{ id: "attention", title: "Needs attention", render: d => { const K = { reply: ["Replies waiting", "mail", "c-blue"], followup: ["Follow-ups due", "clock", "c-orange"], overdue: ["Overdue actions", "alert", "c-red"], paid_waiting: ["Paid, not delivered", "cash", "c-green"], promises: ["Promises past due", "flag", "c-ink"], brief: ["Said yes, no brief", "film", "c-purple"], followup_done: ["Finished, park", "check", "c-grey"] };
+{ id: "attention", title: "Needs attention", render: d => { const K = { reply: ["Replies waiting", "mail", "c-blue"], followup: ["Follow-ups due", "clock", "c-orange"], overdue: ["Overdue actions", "alert", "c-red"], paid_waiting: ["Paid, not delivered", "cash", "c-green"], promises: ["Promises past due", "flag", "c-ink"], brief: ["Said yes, no brief", "film", "c-purple"], followup_done: ["Finished, park", "check", "c-grey"], no_next: ["No next step", "alert", "c-orange"], promise: ["Promise due", "flag", "c-ink"] };
     const kinds = Object.keys(K).filter(k => d.att[k]?.length).concat(Object.keys(d.att).filter(k => !K[k]));
-    return `${head("Needs attention", dB("att", "all", d.attTotal, `chip ${d.attTotal ? "o" : "g"}`, "Open everything that needs attention"), true)}<div class="stack">${kinds.map(k => { const [label, icon, c] = K[k] || [k, "alert", "c-grey"], list = d.att[k], open = STATE.att === k;
+    return `${head("Needs attention", dB("att", "all", d.attTotal, `chip ${d.attTotal ? "o" : "g"}`, "Open everything that needs attention"), true)}<div class="stack">${kinds.map(k => { const [label, icon, c] = K[k] || [keyLabel(k), "alert", "c-grey"], list = d.att[k], open = STATE.att === k;
       return `<div class="tile"><button type="button" class="row" data-act="att" data-k="${esc(k)}" aria-expanded="${open}"><span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(label)}</b></span><span class="row-end">${list.length}</span></button>
         ${open ? `<div class="names">${list.slice(0, 10).map(x => `<button type="button" data-act="lead" data-email="${esc(x.email)}" title="${esc(cut(x.detail, 140))}">${esc(cut(x.name, 30))}${x.due ? ` · <span class="mut">${dLabel(dayOf(x.due))}</span>` : ""}</button>`).join("")}${list.length > 10 ? dB("att", k, `+${list.length - 10} more`, "lk") : ""}</div>` : ""}</div>`; }).join("") || empty("Nothing waiting. All clear.")}</div>`; } },
 { id: "total", title: "Sent in total", render: d => `${head("Sent in total")}${big("sent", "", `${N(d.sentAll)}<small>emails</small>`, "Open the totals per campaign")}
@@ -857,8 +858,8 @@ const DR = {
   mood(a) { const list = a === "all" ? D.pipe.filter(p => !isBuyer(p)) : D.pipe.filter(p => mood(p) === a); return { title: a === "all" ? "Warm leads" : a === "buyer" ? "Buyers" : `Mood: ${MOOD_LABEL[a] || a}`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : " · " + STATE.owner} · click one to open it`, html: leadList([...list].sort((x, y) => +new Date(y.last_reply_at || 0) - +new Date(x.last_reply_at || 0)), p => [p.show, p.last_reply_at ? "last reply " + dLabel(dayOf(p.last_reply_at)) : ""].filter(Boolean).join(" · ")) }; },
   hotlist() { needLastWords(); return { title: "Hot leads", sub: `${D.hot.length} lead${D.hot.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}'s`} · ordered by ${{ wait: "waiting on us first, then next action", next: "next action date", reply: "last reply" }[STATE.hotSort]}`, html: pageTools("hotlist", "Search a name, show, offer or their words") + stackOf(D.hot.map(hotTile), "No hot leads right now.") }; },
   paid() { return { title: "Paid clients", sub: `${D.paidLive} paying client${D.paidLive === 1 ? "" : "s"}${D.paidParted ? ` · ${D.paidParted} parted ways (listed last)` : ""}${STATE.owner === "All" ? "" : ` · ${STATE.owner}'s`} · very hot first, then future valuable · ${D.paidLate} next step${D.paidLate === 1 ? "" : "s"} overdue`, html: pageTools("paid", "Search a name, show, email or note") + stackOf(D.paidC.map(paidTile), "No paying client yet.") }; },
-  att(a) { const L = { reply: "Replies waiting", followup: "Follow-ups due", overdue: "Overdue actions", paid_waiting: "Paid, not delivered", promises: "Promises past due", brief: "Said yes, no brief", followup_done: "Finished, park" }, kinds = a === "all" ? Object.keys(D.att) : [a];
-    return { title: a === "all" ? "Needs attention" : L[a] || a, sub: "Click a name to open the lead", html: kinds.filter(k => D.att[k]).map(k => grp(L[k] || k, D.att[k].length) + `<div class="stack">${D.att[k].map(x => lrow({ email: x.email, name: x.name }, x.detail || "", x.due ? `<span class="row-end"><small>${fDT(x.due)}</small></span>` : "")).join("")}</div>`).join("") || empty("Nothing waiting. All clear.") }; },
+  att(a) { const L = { reply: "Replies waiting", followup: "Follow-ups due", overdue: "Overdue actions", paid_waiting: "Paid, not delivered", promises: "Promises past due", brief: "Said yes, no brief", followup_done: "Finished, park", no_next: "No next step", promise: "Promise due" }, kinds = a === "all" ? Object.keys(D.att) : [a];
+    return { title: a === "all" ? "Needs attention" : L[a] || keyLabel(a), sub: "Click a name to open the lead", html: kinds.filter(k => D.att[k]).map(k => grp(L[k] || keyLabel(k), D.att[k].length) + `<div class="stack">${D.att[k].map(x => lrow({ email: x.email, name: x.name }, x.detail || "", x.due ? `<span class="row-end"><small>${fDT(x.due)}</small></span>` : "")).join("")}</div>`).join("") || empty("Nothing waiting. All clear.") }; },
   fu(a) { const list = a === "over" ? D.fuOver : a === "week" ? D.fuDays.flatMap(x => x.list) : (D.fuDays.find(x => x.day === a) || { list: [] }).list;
     return { title: a === "over" ? "Follow-ups overdue" : a === "week" ? "Follow-ups due this week" : `Follow-ups due ${dLong(a)}`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}`, html: stackOf(list.map(f => lrow(f, `touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · ${(f.fu_stage || "").replace(/_/g, " ")} · ${f.show || ""}`, `<span class="row-end"><small>${dLabel(f.day)}</small>${f.owner ? `<small>${esc(f.owner)}</small>` : ""}</span>`)), "Nobody is due.") }; },
   funnel(i) { i = +i; if (i === 0) return DR.sent(""); if (i === 1) return DR.replies("real"); if (i === 3) { const list = RAW.pipeline.filter(p => p.delivered_at).sort((x, y) => +new Date(y.delivered_at) - +new Date(x.delivered_at)); return { title: "Samples delivered, everyone", sub: `${list.length} leads`, html: leadList(list, p => "delivered " + fDT(p.delivered_at)) }; }
@@ -996,6 +997,7 @@ async function openLead(email, opener, keepNav) {
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
     ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
     <div id="dr-more"></div>`;
+  $("#dr-stage").innerHTML = st ? stageChip(st) : ""; drFoot();
   const dr = $("#drawer"), sc = $("#scrim"); dr.hidden = sc.hidden = false; dr.dataset.email = email;
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
   const ems = [...new Set([email, p ? lc(p.email) : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || []).map(lc)].filter(Boolean))]; DR_EMS = ems; TL = { rows: null, all: false };
@@ -1018,6 +1020,14 @@ async function openLead(email, opener, keepNav) {
       ${calls.length ? `<div class="dr-sec" id="dr-calls"><h3>Calls</h3>${callsList(calls)}</div>` : ""}`;
   } catch (e) { const c2 = $("#dr-conv"); if (c2) c2.innerHTML = `<h3>Conversation</h3>${empty("Couldn't load the thread. Try again.")}`; }
 }
+/* phone (BENAS 11-21 "actions reachable with one thumb"): the toolbar + prev/next row move from the top block into a
+   footer under the scrolling body; the stage chip sits next to the name in the fixed top. Back in place on a wide screen. */
+function drFoot() {
+  const f = $("#dr-foot"), s = $("#dr-body .dr-sum"); if (!f) return;
+  if (!s) { f.textContent = ""; f.hidden = true; return; }
+  const els = [...$$(":scope>.acts,:scope>.dr-navr", s), ...f.children]; f.hidden = !PHONE.matches; (PHONE.matches ? f : s).append(...els);
+}
+PHONE.addEventListener("change", drFoot);
 const igOf = email => { const c = RAW.clients.find(x => (x.emails || []).some(e => lc(e) === lc(email))); return c && c.instagram ? String(c.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : ""; };
 function navLead(dir) { const dr = $("#drawer"); if (dr.hidden) return; const i = NAV.indexOf(dr.dataset.email) + dir; if (i >= 0 && i < NAV.length) openLead(NAV[i], null, true); }
 function closeLead() {
