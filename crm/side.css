@@ -677,3 +677,6 @@ tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-ch
   .cl-oe{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .cl-oe label:first-child{grid-column:1/-1} .cl-oe-b{grid-column:1/-1} .cl-oe-b .act{flex:1;height:44px}
   .cl-oe input,.cl-oe select{height:44px;font-size:16px}
 }
+/* 11-21 To-dos from public.task_queue: the lead a task belongs to (one chip) + a Done tick */
+.sd-card .sd-lead{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-card .sd-tick:hover{color:var(--green);opacity:1}

@@ -3,7 +3,7 @@
    Pages live on one URL with ?p= (history.pushState), so back, refresh and links work on GitHub Pages with no 404.
    Shares crm.js's Supabase client (window.BEJU_CRM_SB); shows only while the founder dashboard is on screen.
    Reads: crm_panels ('expenses', 'ab_tests', 'metrics' from scripts/crm_panels_sync.py), clients, deliveries, payments, retainers,
-   campaign_daily, interested_leads, pipeline, order_progress, order_problems. Writes: todo_cards, orders (size / kind / status, founder RLS). CSP: no inline styles. */
+   campaign_daily, interested_leads, pipeline, order_progress, order_problems. Writes: tasks + the row it came from (todo_cards / call_tasks / founder_tasks), orders (size / kind / status), founder RLS. CSP: no inline styles. */
 (() => {
 "use strict";
 const CFG = window.BEJU_CRM || {};
@@ -1074,11 +1074,25 @@ async function promNames() {   // lead / client names for the promise tiles (11-
   pl.forEach(x => { if (x.email && x.name) m[lc(x.email)] = x.name; }); cl.forEach(c => (c.emails || []).forEach(e => { if (c.name) m[lc(e)] = c.name; }));
   return m;
 }
-async function loadTodos() { await me(); [PROMS, PNAME] = await Promise.all([all("promises", "id,lead_email,promise,owner,due_at,status", q => q.eq("status", "open").order("due_at")).catch(() => []), promNames()]); return all("todo_cards", "*", q => q.order("pos").order("id")); }
+/* 11-21 (BENAS, one task list): the board reads public.task_queue (open tasks from every list + open promises) and the done tasks of
+   the last 30 days. A move, edit or tick writes the tasks row; the row it came from (todo_cards, call_tasks, founder_tasks) gets the
+   same change first, so the old lists (Do next, call cards, crm-api) agree until they retire. New cards still go in todo_cards: its
+   trigger makes the tasks row, and it is the table realtime watches. */
+const vilNoon = d => { const g = Date.parse(d + "T12:00:00Z"), p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(g)).map(x => [x.type, x.value]));
+  return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - g)).toISOString(); };   // a day at 12:00 Vilnius -> ISO
+const tCard = (t, ref) => ({ id: +t.id, title: t.title, detail: t.detail || null, owner: t.owner || "Both", col: t.status === "dropped" ? "done" : t.status, due: t.due_at ? dayOf(t.due_at) : null, pos: +t.pos || 0, big: !!t.big, source: t.source, ref: ref ?? null, lead: lc(t.lead_email) });
+async function loadTaskList() {
+  const q = await all("task_queue", "*"), open = q.filter(x => x.kind === "task"), since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [refs, done] = await Promise.all([open.length ? all("tasks", "id,source_ref", r => r.in("id", open.map(x => +x.id))) : [], all("tasks", "id,title,detail,owner,status,due_at,lead_email,source,source_ref,big,pos,done_at", r => r.eq("status", "done").gte("done_at", since))]);
+  const ref = Object.fromEntries(refs.map(r => [+r.id, r.source_ref]));
+  PROMS = q.filter(x => x.kind === "promise").map(x => ({ id: x.id, lead_email: x.lead_email, promise: x.title, owner: x.owner, due_at: x.due_at, status: "open" })).sort((a, b) => String(a.due_at || "9").localeCompare(String(b.due_at || "9")));
+  return open.map(t => tCard(t, ref[+t.id])).concat(done.map(t => tCard(t, t.source_ref)));
+}
+async function loadTodos() { await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
 const overdue = d => d && d < dayOf(Date.now());
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort((a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {
-  try { const rows = await must(sb().from("todo_cards").select("owner").neq("col", "done")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
+  try { const rows = await must(sb().from("task_queue").select("owner").eq("kind", "task")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
     const b = $("#sn-todo-n"), a = $('#snav a[data-nav="todos"]'), tip = n ? `To-dos · Simas ${by("Simas")} · Benas ${by("Benas")}${by("Both") ? ` · Both ${by("Both")}` : ""}` : "To-dos";
     if (b) { b.hidden = !n; b.textContent = n || ""; } if (a) { a.dataset.tip = tip; a.title = tip; } } catch {}
 }
@@ -1087,10 +1101,10 @@ function cardHtml(c) {
   const oc = c.owner === "Simas" ? "chip b" : c.owner === "Benas" ? "chip o" : "chip";
   return `<div class="tile sd-card${c.col === "done" ? " done" : ""}" data-card="${c.id}" tabindex="0" aria-roledescription="draggable card" aria-label="${esc(c.title)}, ${esc(c.owner)}. Alt plus arrow keys move it.">
     <div class="tt">${esc(c.title)}</div>${c.detail ? `<div class="dd">${esc(c.detail)}</div>` : ""}
-    <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
+    <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : ""}${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
       <button type="button" class="mini" data-mv="-1" aria-label="Move left" title="Move left"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
       <button type="button" class="mini" data-mv="1" aria-label="Move right" title="Move right"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
-      <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button></div></div>`;
+      <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button>${c.col !== "done" ? `<button type="button" class="mini sd-tick" data-tick aria-label="Done" title="Done"><svg aria-hidden="true"><use href="#i-check"/></svg></button>` : ""}</div></div>`;
 }
 function formHtml(c) {
   const o = c ? c.owner : (EDIT && EDIT.owner) || (TVIEW === "board" && OWNF !== "All" ? OWNF : "") || (ME && ME.who) || "Both";
@@ -1099,7 +1113,7 @@ function formHtml(c) {
     <textarea name="detail" rows="2" maxlength="4000" placeholder="Details (optional)" aria-label="Details">${esc(c && c.detail ? c.detail : "")}</textarea>
     <label class="sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}" aria-label="Due date"></label>
     <div class="seg" role="group" aria-label="Owner">${["Simas", "Benas", "Both"].map(x => `<button type="button" data-own="${x}" class="${x === o ? "on" : ""}" aria-pressed="${x === o}">${x}</button>`).join("")}</div>
-    <div class="row">${c ? `<button type="button" class="act no del" data-del>Delete</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
+    <div class="row">${c ? `<button type="button" class="act no del" data-del>${c.source === "board" ? "Delete" : "Drop"}</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
 }
 const addBtn = (k, o) => EDIT && EDIT.id === "new" && EDIT.col === k && (EDIT.owner || "") === (o || "") ? formHtml(null) : `<button type="button" class="sd-add" data-add="${k}"${o ? ` data-owner="${o}"` : ""}><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a card</button>`;
 function boardHtml(list) {
@@ -1145,10 +1159,28 @@ function renderTodos() {
   todoBadge();
 }
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
+async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
+  const has = k => k in patch, nowI = new Date().toISOString(), flip = has("col") && (patch.col === "done") !== (c.col === "done"), who = (ME && ME.who !== "Both" ? ME.who : ME && ME.name) || null;
+  if (c.source === "board" && c.ref) { const u = {}; ["col", "pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; }); if (Object.keys(u).length) await must(sb().from("todo_cards").update(u).eq("id", +c.ref)); }
+  else if (c.source === "call" && c.ref) { const u = {}; if (flip) { u.done_at = t.done_at; u.done_by = t.done_at ? who : null; } if (has("owner")) u.owner = patch.owner; if (has("title")) u.text = patch.title; if (has("due")) u.due_at = t.due_at;
+    if (Object.keys(u).length) await must(sb().from("call_tasks").update(u).eq("id", +c.ref)); }
+  else if (c.source === "founder_tasks" && c.ref) { const u = {}; if (flip) u.done_at = t.done_at; if (has("owner")) u.who = patch.owner; if (has("title")) u.title = patch.title; if (has("detail")) u.detail = patch.detail; if (has("due")) u.due_at = t.due_at;
+    if (Object.keys(u).length) { u.updated_at = nowI; await must(sb().from("founder_tasks").update(u).eq("id", +c.ref)); } }
+}
+async function writeTask(c, patch) {   // c = the card before the change
+  const t = { updated_at: new Date().toISOString() };
+  if ("col" in patch && patch.col !== c.col) { t.status = patch.col; t.done_at = patch.col === "done" ? t.updated_at : null; }
+  if ("pos" in patch) t.pos = patch.pos; if ("owner" in patch) t.owner = patch.owner; if ("title" in patch) t.title = patch.title; if ("detail" in patch) t.detail = patch.detail;
+  if ("due" in patch) t.due_at = patch.due ? vilNoon(patch.due) : null;
+  let warn = false; try { await mirror(c, patch, t); } catch { warn = true; }
+  const ok = await must(sb().from("tasks").update(t).eq("id", c.id).select("id"));
+  if (!ok || !ok.length) throw new Error("not allowed");
+  if (warn) toast("Saved. The list it came from didn't update.");
+}
 async function saveCard(id, patch) {
   const c = CACHE.todos.find(x => x.id === id), before = { ...c };
   Object.assign(c, patch); renderTodos();
-  try { await must(sb().from("todo_cards").update(patch).eq("id", id)); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
+  try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
 }
 const moveCard = (id, col, idx) => saveCard(id, { col, pos: posBetween(CACHE.todos, col, idx, id) });
 function dropCard(id, col, owner, prevId, nextId) {   // position from the neighbours in the zone it was dropped into (works in both views)
@@ -1165,12 +1197,16 @@ function wireBoard() {
     if (t.hasAttribute("data-cancel")) { EDIT = null; renderTodos(); return; }
     if (t.hasAttribute("data-del")) {
       const fid = +t.closest("[data-form]").dataset.form, c = list.find(x => x.id === fid);
-      if (!c || !confirm(`Delete "${c.title}"?`)) return;
+      if (!c || !confirm(`${c.source === "board" ? "Delete" : "Drop"} "${c.title}"?`)) return;
       EDIT = null; CACHE.todos = list.filter(x => x.id !== fid); renderTodos();
-      try { await must(sb().from("todo_cards").delete().eq("id", fid)); } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't delete that card."); }
+      try {
+        if (c.source === "board" && c.ref) { await must(sb().from("todo_cards").delete().eq("id", +c.ref)); await must(sb().from("tasks").delete().eq("id", fid)); }
+        else { const t = { status: "dropped", done_at: new Date().toISOString(), updated_at: new Date().toISOString() }; try { await mirror(c, { col: "done" }, t); } catch {} const ok = await must(sb().from("tasks").update(t).eq("id", fid).select("id")); if (!ok || !ok.length) throw new Error("not allowed"); }
+      } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't remove that card."); }
       return;
     }
     if (id && t.hasAttribute("data-ed")) { EDIT = { id, col: list.find(x => x.id === id).col }; renderTodos(); return; }
+    if (id && t.hasAttribute("data-tick")) { await moveCard(id, "done", 0); return; }
     if (id && t.dataset.mv) { const c = list.find(x => x.id === id), i = COLS.findIndex(x => x[0] === c.col) + +t.dataset.mv; if (COLS[i]) await moveCard(id, COLS[i][0], 0); }
   });
   board.addEventListener("submit", async ev => {
@@ -1180,7 +1216,8 @@ function wireBoard() {
     if (f.dataset.form === "new") {
       const col = f.dataset.col, row = { title, detail, owner, due, col, pos: posBetween(CACHE.todos, col, 0), created_by: (ME && ME.name) || null };
       EDIT = null;
-      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()); CACHE.todos.push(ins); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that card. Check your connection."); }
+      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()), t = await must(sb().from("tasks").select("*").eq("source", "board").eq("source_ref", String(ins.id)).maybeSingle());
+        if (t) CACHE.todos.push(tCard(t, t.source_ref)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that card. Check your connection."); }
     } else { EDIT = null; await saveCard(+f.dataset.form, { title, detail, owner, due }); }
   });
   board.addEventListener("keydown", ev => {
@@ -1318,7 +1355,7 @@ function startRealtime() {
     clearTimeout(RT_T); RT_T = setTimeout(async () => {
       todoBadge();
       if (DRAG || EDIT || PAGE !== "todos") return;
-      try { CACHE.todos = await all("todo_cards", "*", q => q.order("pos").order("id")); renderTodos(); } catch {}
+      try { CACHE.todos = await loadTaskList(); renderTodos(); } catch {}
     }, 400);
   }).subscribe();
 }
