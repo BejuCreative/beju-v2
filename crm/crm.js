@@ -22,6 +22,7 @@ const cut = (s, n) => { s = String(s ?? "").replace(/\s+/g, " ").trim(); return 
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 const ON_SITE = /(^|\.)bejucreative\.digital$/i.test(location.hostname);
 const SITE = ON_SITE ? "/" : "https://bejucreative.digital/", PORTAL_HOME = ON_SITE ? "/portal/" : "https://bejucreative.digital/portal/", PORTAL = PORTAL_HOME + "?view=portal";   // ?view=portal: the portal sends a founder to /crm/ unless the founder asks for the portal
+const PORTAL_ON = false;   // 11-21 (founders): client portal hidden in the CRM (top bar, account menu, ⌘K, wait screen); code kept, true brings the links back
 /* looks: id, name, mode, browser bar colour, one-line description. theme.js applies the saved one before the first paint. */
 const THEMES = [["frost", "Frost", "light", "#eef1f8", "Bright white glass"], ["graphite", "Graphite", "dark", "#0b0c0e", "Neutral dark glass"], ["forest", "Forest", "dark", "#070805", "BEJÚ brand green"], ["ocean", "Ocean", "dark", "#041226", "Deep blue glass"], ["sunset", "Sunset", "dark", "#1a0e16", "Warm peach and rose"]];
 const lookOf = () => THEMES.find(t => t[0] === document.documentElement.dataset.theme) || THEMES[0];
@@ -898,7 +899,7 @@ const DR = {
   me() { return { title: ME ? (ME.name || ME.email) : "You", sub: ME ? ME.email : "", html: `${facts([["Role", "Founder"], ["Connection", RT === "live" ? "Live" : "Polling"], ["Look", `<span data-look-name>${lookOf()[1]}</span>`]])}
       ${lookBox()}
       ${grp("Shortcuts")}<div class="stack">${[["⌘K / Ctrl K", "Search leads and clients, jump to a card, run an action"], ["/", "Search leads"], ["← →", "In a chart: move through the days. In a lead: previous and next lead of the list"], ["Enter", "Open what is selected"], ["Esc", "Close the top layer"], ["W", "Wall mode"]].map(x => `<div class="tile row"><span class="kbd">${x[0]}</span><span class="row-main"><small>${x[1]}</small></span></div>`).join("")}</div>
-      <div class="acts sp"><a class="act" href="${esc(PORTAL)}">${ic("link")}Client portal</a><a class="act" href="${esc(SITE)}">${ic("link")}Website</a>${dB("look", "", ic("sun") + "All looks", "act")}<button type="button" class="act" data-act="refresh">${ic("refresh")}Refresh now</button><button type="button" class="act" data-act="chpw">${ic("user")}Change password</button><button type="button" class="act" data-act="mfa">${ic("check")}2-step login</button><button type="button" class="act no" data-act="signout">${ic("out")}Sign out</button></div>` }; },
+      <div class="acts sp">${PORTAL_ON ? `<a class="act" href="${esc(PORTAL)}">${ic("link")}Client portal</a>` : ""}<a class="act" href="${esc(SITE)}">${ic("link")}Website</a>${dB("look", "", ic("sun") + "All looks", "act")}<button type="button" class="act" data-act="refresh">${ic("refresh")}Refresh now</button><button type="button" class="act" data-act="chpw">${ic("user")}Change password</button><button type="button" class="act" data-act="mfa">${ic("check")}2-step login</button><button type="button" class="act no" data-act="signout">${ic("out")}Sign out</button></div>` }; },
   look(a) { const first = a === "first"; return { title: first ? "Pick your look" : "Look", sub: first ? "Five kinds of glass. Change it any time from the account menu." : "Saved on this device", html:
     `<div class="thg" role="group" aria-label="Colour theme">${THEMES.map(t => `<button type="button" class="thp" data-act="look" data-t="${t[0]}" aria-pressed="${t[0] === lookOf()[0]}"><span class="thsw" data-th="${t[0]}" aria-hidden="true"><i></i><i></i><i></i></span><b>${t[1]}</b><small>${t[4]}</small></button>`).join("")}</div>${motionRow()}${first ? `<div class="acts sp"><button type="button" class="act go" data-act="mclose">Done</button></div>` : ""}` }; },
   todaylist() { const I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"] };
@@ -1370,7 +1371,7 @@ function palItems(q) {
   const cmds = [cmd("Refresh now", "", "refresh", () => refresh(true)), ...THEMES.map(t => cmd(`Look: ${t[1]}`, t[4] + (t[0] === lookOf()[0] ? " · on now" : ""), "sun", () => setTheme(t[0], true))), cmd(motionFull() ? "Motion: switch to Calm" : "Motion: switch to Full", "ambient motion", "bolt", () => setMotion(motionFull() ? "calm" : "full", true)), cmd("Pick a look", "all five", "sun", () => openDrill("look", "")),
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
-    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
+    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
   const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
@@ -1694,14 +1695,14 @@ async function enter(user) {
   ME = { ...p, email: user.email || p.email };
   try { if (!(await mfaGate())) return; }   // 2-step login before any founder data loads
   catch (e) { ME = null; show("gate"); msg("The 2-step login check didn't work. Check your connection and log in again."); return; }
-  $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL;
+  $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL; $("#nav-portal").hidden = !PORTAL_ON;
   show("boot"); build(); mountHero();
   try { await refresh(); show("app"); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
     if (FIRST_LOOK && !store.get("beju-crm-look")) { store.set("beju-crm-look", lookOf()[0]); openDrill("look", "first"); } }
   catch (e) { show("gate"); msg("Couldn't load the CRM data. Check your connection and log in again."); }
 }
 async function signOut() { stopLoop(); stopRealtime(); closePal(); if (ASK) ASK.done(null); closeLead(); closeDrill(); try { await sb.auth.signOut(); } catch {} ME = RAW = D = null; NT = null; NTS.open = NTS.form = null; NTS.all = false; TOASTED.clear(); clearTimeout(NT_SN); paintBell(); PREV.clear(); feedSeen.clear(); $("#grid").innerHTML = $("#grid2").innerHTML = $("#hero").innerHTML = ""; setMode("in"); show("gate"); }
-$("#wait-out").addEventListener("click", signOut); $("#wait-portal").href = PORTAL_HOME;
+$("#wait-out").addEventListener("click", signOut); $("#wait-portal").href = PORTAL_HOME; $("#wait-portal").hidden = !PORTAL_ON;
 $("#wait-check").addEventListener("click", async () => { const { data } = await sb.auth.getSession(); if (data.session) enter(data.session.user).catch(() => {}); else show("gate"); });
 
 /* ---------------- boot ---------------- */
