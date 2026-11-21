@@ -1139,3 +1139,21 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
   .dr-foot .dr-navr{flex:none;margin:0;gap:2px;font-size:13px}
   .dr-foot .dr-navr>span:last-child{display:none}   /* "arrow keys move through the list": no keys on a phone */
 }
+
+/* phone cards: wrap instead of cutting off; 4-up number rows become 2 x 2; anchored cards land below the sticky top bar */
+@media (max-width:600px){
+  .row-main b,.row-main small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .act{white-space:normal;height:auto;min-height:44px;max-width:100%;text-align:left;line-height:1.25;padding-top:6px;padding-bottom:6px}
+  .trio.quad{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .trio.quad>:nth-child(3){border-left:0;padding-left:0}
+  .tgrid.q4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tgrid.q4 .tc:nth-child(odd){border-left:0;padding-left:2px}
+  .tgrid.q4 .tc:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .trio span,.tgrid .tl{white-space:normal}
+  .card,.sp-card,.dr-sec{scroll-margin-top:calc(76px + env(safe-area-inset-top))}
+  .ab-th{flex-wrap:wrap} .ab-th .chip{white-space:normal;max-width:100%}
+  /* chart cards: title + expand on one line, the range and legend on their own lines under it */
+  .chart-card .ch{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;row-gap:8px}
+  .chart-card .ch>.xp{grid-column:2;grid-row:1}
+  .chart-card .ch>.cx{grid-column:1/-1;grid-row:2;justify-content:flex-start;white-space:normal}
+}
