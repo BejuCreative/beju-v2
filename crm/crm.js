@@ -84,9 +84,23 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
   const out = [];
   for (let i = 0; ; i += 1000) { let q = sb.from(table).select(cols).range(i, i + 999); if (mod) q = mod(q); const rows = await must(q); out.push(...rows); if (rows.length < 1000) return out; }
 }
+/* 11-21 (SIMAS: "a square that says action … a payment, a new instantly reply, changes to the CRM"): the extra rows behind the Activity feed.
+   Read-only. Every read fails soft, so a missing grant leaves a kind out instead of blanking the page. The small lookup tables
+   (founder_tasks, desk_items, promises, opportunities) are read whole: audit_log update rows carry only the changed fields, not the title. */
+function feedX() {
+  const soft = q => must(q).catch(() => []), d14 = new Date(Date.now() - 14 * 864e5).toISOString();
+  return Promise.all([
+    soft(sb.from("audit_log").select("id,at,table_name,row_key,op,actor,changed").gte("at", d14).neq("table_name", "api_keys").order("at", { ascending: false }).limit(300)),
+    soft(sb.from("founder_tasks").select("id,title")), soft(sb.from("desk_items").select("id,kind,client,title")),
+    soft(sb.from("promises").select("id,lead_email,promise")), soft(sb.from("opportunities").select("id,client,email")),
+    soft(sb.from("touches").select("id,lead_email,at,actor,call_uid").not("call_uid", "is", null).order("at", { ascending: false }).limit(100)),
+    soft(sb.from("call_tasks").select("id,lead_email,text,done_at,done_by").not("done_at", "is", null).order("done_at", { ascending: false }).limit(100)),
+    soft(sb.from("pack_overrides").select("client_id,order_name,status,set_by,set_at").not("set_at", "is", null)),
+  ]).then(([audit, ft, desk, prom, opps, cnotes, ctasks, packs]) => ({ audit, ft, desk, prom, opps, cnotes, ctasks, packs }));
+}
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -94,7 +108,7 @@ async function fetchAll() {
     all("reply_queue", "lead_email,inbox,received_at,kind,answered,blocklisted,snippet", q => q.gte("received_at", since60).order("received_at", { ascending: false })),
     all("needs_attention"), all("fu_state"), all("inbox_live"),
     all("today_items", "*", q => q.eq("day", t)), all("sync_status"),
-    all("deliveries", "id,client_id,title,delivered_at", q => q.order("id")), all("clients", "id,name,emails,source,instagram"),
+    all("deliveries", "id,client_id,title,order_name,delivered_at", q => q.order("id")), all("clients", "id,name,emails,source,instagram"),
     all("promises", "*", q => q.eq("status", "open")),
     all("profiles", "id,name,email,is_admin,created_at,channel,sells,frequency,phone"),
     all("sample_requests", "*", q => q.order("created_at", { ascending: false })),
@@ -113,6 +127,7 @@ async function fetchAll() {
     all("lead_stage", "*").catch(() => null),   // 11-21: each lead's stage from evidence (drawer chip, Pipeline card list)
     all("lead_next_step", "*").catch(() => null),   // 11-21: one next step per lead (drawer)
     must(sb.from("pipeline_forecast").select("*").order("ord")).catch(() => null),   // 11-21: leads and weighted $ per stage (Pipeline card)
+    feedX(),   // 11-21: CRM changes, calls and to-dos for the Activity feed
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -120,7 +135,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx };
 }
 
 /* ---------------- derive ---------------- */
@@ -313,17 +328,74 @@ function derive() {
   d.pNotes = Object.values(groups).map(g => ({ ...g, notes: g.notes.sort((a, b) => (+a.at || 0) - (+b.at || 0)) }));
   d.pOpen = d.pSamples.filter(s => /^(requested|accepted|building)$/.test(s.status)).length + d.pVideos.filter(v => /^(received|editing|revision)$/.test(v.status)).length;
 
-  /* ---- v2: activity feed (newest first) ---- */
-  const ev = [];
-  pays.slice(0, 40).forEach(p => ev.push({ t: +new Date(p.paid_at), icon: "cash", c: "c-green", title: `+${usd(p.amount)} from ${p.payer_name || p.email || "a client"}`, sub: PACK[p.package] || "Payment", k: "client", a: payKey(p) }));
-  R.replies.filter(r => r.kind === "REAL").slice(0, 60).forEach(r => ev.push({ t: +new Date(r.received_at), icon: "mail", c: "c-blue", title: `Reply from ${nameOf(r.lead_email)}`, sub: r.snippet || "", email: r.lead_email }));
-  R.pipeline.filter(p => p.delivered_at).forEach(p => ev.push({ t: +new Date(p.delivered_at), icon: "film", c: "c-orange", title: `Sample delivered to ${p.name || p.email}`, sub: p.show || "", email: p.email }));
-  R.profiles.filter(p => !p.is_admin).forEach(p => ev.push({ t: +new Date(p.created_at), icon: "user", c: "c-purple", title: `Portal sign-up: ${p.name || p.email}`, sub: p.email || "", k: "client", a: "e:" + lc(p.email) }));
-  R.sampleReq.forEach(s => ev.push({ t: +new Date(s.created_at), icon: "film", c: "c-purple", title: `Portal sample request from ${who(s.user_id).name}`, sub: s.video_url || "", k: "psamples", a: "" }));
-  R.videos.forEach(v => ev.push({ t: +new Date(v.created_at), icon: "play", c: "c-purple", title: `Portal video request: ${v.title || "Untitled"}`, sub: who(v.user_id).name, k: "pvideos", a: "" }));
+  /* ---- v2: activity feed (newest first). 11-21 (SIMAS: "a payment, a new instantly reply, and maybe changes to the CRM"): every row says who
+     did it. g = the filter chip it sits under (money, reply, crm, call, deliv; "" = All only). quiet = sync-job rows: full list only, never the card.
+     The hero ticker keeps to money, replies and deliveries. ---- */
+  const ev = [], X = R.fx || {}, cByE = {}, cById = Object.fromEntries(R.clients.map(c => [String(c.id), c])); R.clients.forEach(c => (c.emails || []).forEach(e => { cByE[lc(e)] = c; }));
+  const calBy = {}; (R.calls || []).forEach(x => { if (x.email && x.name) calBy[lc(x.email)] = x.name; });   // cal.com names read better than some client records
+  const nm = (e, alt) => { const k = lc(e), p = pipeAll[k], x = intr[k], c = cByE[k]; return (p && p.name) || (x && x.first_name) || calBy[k] || alt || (c && c.name) || e || "a lead"; };
+  const actor = a => { const s = lc(a); return !s || /^(service|system|sync|script|sheet|cron|orders_sync|call notes)$/.test(s) ? "" : /^simas(.?s claude|-claude)$/.test(s) ? "Simas's Claude" : /^benas(.?s claude|-claude)$/.test(s) ? "Benas's Claude" : s === "both" ? "Simas and Benas" : s === "simas" ? "Simas" : s === "benas" ? "Benas" : String(a).trim(); };
+  const words = v => String(v ?? "none").replace(/_/g, " ").toLowerCase();
+  pays.slice(0, 40).forEach(p => ev.push({ g: "money", t: +new Date(p.paid_at), icon: "cash", c: "c-green", title: `+${usd(p.amount)} from ${p.payer_name || p.email || "a client"}`, sub: PACK[p.package] || "Payment", k: "client", a: payKey(p) }));
+  R.replies.filter(r => r.kind === "REAL").slice(0, 60).forEach(r => ev.push({ g: "reply", t: +new Date(r.received_at), icon: "mail", c: "c-blue", title: `Reply from ${nm(r.lead_email)}`, sub: r.snippet || "", email: r.lead_email }));
+  R.pipeline.filter(p => p.delivered_at).forEach(p => ev.push({ g: "deliv", t: +new Date(p.delivered_at), icon: "film", c: "c-orange", title: `Sample delivered to ${p.name || p.email}`, sub: p.show || "", email: p.email }));
+  /* paid videos (public.deliveries = the Drive index, day only): one row per client per day; INTERNAL folders are stock, not sent */
+  const dv = {}; R.deliveries.filter(x => x.delivered_at && !/^INTERNAL\b/i.test(x.order_name || "")).forEach(x => { const day = String(x.delivered_at).slice(0, 10), k = (x.client_id || x.title) + "|" + day; (dv[k] || (dv[k] = { day, cid: x.client_id, list: [] })).list.push(x); });
+  Object.values(dv).forEach(g => { const t0 = String(g.list[0].title || ""), n = g.list.length, to = t0.includes(" - ") ? t0.split(" - ")[0].trim() : (cById[g.cid] || {}).name || "a client",
+      nums = g.list.map(x => (String(x.title || "").match(/\bShort\s+0*(\d+)/i) || [])[1]), sh = [...new Set(nums)].sort((a, b) => a - b), m = sh.length,   // a v2 of the same Short counts once
+      what = n === 1 ? (t0.match(/\bShort\s+\d+(\s+v\d+)?/i) || ["1 video"])[0] : nums.every(Boolean) ? (m === 1 ? `Short ${sh[0]}` : m <= 4 ? `Shorts ${sh.slice(0, -1).join(", ")} and ${sh[m - 1]}` : `${m} Shorts`) : `${n} videos`;
+    ev.push({ g: "deliv", t: Math.min(Date.now() - 1000, +new Date(tzAt(g.day, 0))), dateOnly: true, icon: "play", c: "c-orange", title: `${what} delivered to ${to}`, sub: g.list.map(x => x.title).join(" · "), ...(g.cid ? { k: "client", a: "c:" + g.cid } : { k: "vids", a: g.day.slice(0, 7) }) }); });
+  /* calls: booked and cancelled on cal.com, call notes added, call to-dos ticked */
+  (R.calls || []).forEach(x => { const n = nm(x.email, x.name), when = `${dLabel(dayOf(x.start_at))}, ${timeOf(x.start_at)}`, base = { g: "call", c: "c-blue2", ...(x.email ? { email: x.email } : { k: "feed", a: "call" }) };
+    if (x.booked_at) ev.push({ ...base, t: +new Date(x.booked_at), icon: "phone", title: `${n} booked a call for ${when}`, sub: x.title || "" });
+    if (/cancel/i.test(x.status || "")) ev.push({ ...base, t: +new Date(x.updated_at || x.start_at), icon: "x", c: "c-grey", title: `${n} cancelled the call on ${when}` }); });
+  (X.cnotes || []).filter(x => x.call_uid).forEach(x => ev.push({ g: "call", t: +new Date(x.at), icon: "edit", c: "c-blue2", title: `${actor(x.actor) || "The team"} added call notes for ${nm(x.lead_email)}`, email: x.lead_email }));
+  (X.ctasks || []).filter(x => x.done_at).forEach(x => ev.push({ g: "call", t: +new Date(x.done_at), icon: "check", c: "c-green", title: `${actor(x.done_by) || "The team"} ticked “${cut(x.text, 70)}”`, sub: `Call to-do · ${nm(x.lead_email)}`, email: x.lead_email }));
+  /* CRM changes with who did them: public.audit_log (stage moves, holds, to-dos, contact edits, promises, deals) + pack edits (pack_overrides.set_by).
+     Call notes and call to-dos come from their own tables above. Rows by a sync job (actor "service") fold into one quiet row per table per half hour. */
+  (X.packs || []).forEach(x => ev.push({ g: "crm", t: +new Date(x.set_at), icon: "edit", c: "c-grey", title: `${actor(x.set_by) || "The team"} marked ${(cById[x.client_id] || {}).name || "a client"}'s ${x.order_name} ${words(x.status)}`, sub: "", k: "client", a: "c:" + x.client_id }));
+  const ftT = Object.fromEntries((X.ft || []).map(x => [String(x.id), x.title])), dkB = Object.fromEntries((X.desk || []).map(x => [String(x.id), x])), prB = Object.fromEntries((X.prom || []).map(x => [String(x.id), x])), opB = Object.fromEntries((X.opps || []).map(x => [String(x.id), x]));
+  const ST = { YES: "said yes", CLAIMED: "claimed", BUILT: "built", DELIVERED: "sample delivered", REPLIED: "replied", HOT: "hot", WON: "won", LOST: "lost", SILENT: "silent", FU1: "follow-up 1", FU2: "follow-up 2" }, sys = {}, runs = [];
+  (X.audit || []).forEach(r => { const tb = r.table_name, ch = r.changed || {}, up = r.op === "update", key = String(r.row_key || ""), A = actor(r.actor), t = +new Date(r.at);
+    if (/^(call_tasks|api_keys)$/.test(tb) || (tb === "touches" && (up || ch.call_uid))) return;
+    if (!A) { let g = sys[tb]; if (!g || g.lo - t > 18e5) { g = sys[tb] = { t, lo: t, tb, keys: new Set() }; runs.push(g); } g.lo = t; g.keys.add(key); return; }   // rows come newest first: a gap of 30 min+ starts a new run
+    const has = k => k in ch, nv = k => up && Array.isArray(ch[k]) ? ch[k][1] : ch[k];
+    let e = null;
+    if (tb === "pipeline") { const N = nm(key), em = { email: key };
+      e = !up ? { ...em, icon: "plus", title: `${A} added ${N} to the samples pipeline` }
+        : has("status") ? { ...em, icon: "edit", title: `${A} moved ${N} to ${ST[nv("status")] || words(nv("status"))}` }
+        : has("fu_stage") ? { ...em, icon: "edit", title: `${A} set ${N} to ${words(nv("fu_stage"))}`, sub: nv("fu_note") || "" }
+        : has("owner") ? { ...em, icon: "user", title: `${A} gave ${N} to ${nv("owner") || "nobody"}` }
+        : has("next_action") || has("next_action_at") ? { ...em, icon: "clock", title: `${A} set the next step for ${N}`, sub: nv("next_action") || "" }
+        : { ...em, icon: "edit", title: `${A} added a note on ${N}`, sub: nv("fu_note") || "" }; }
+    else if (tb === "founder_tasks") { const T = `“${cut(!up && ch.title ? ch.title : ftT[key] || "a to-do", 70)}”`, base = { k: "next", a: "" };
+      e = r.op === "insert" ? { ...base, icon: "plus", title: `${A} added ${T}${ch.who ? ` for ${ch.who}` : ""}` } : r.op === "delete" ? { ...base, icon: "x", title: `${A} deleted ${T}` }
+        : has("done_at") ? (nv("done_at") ? { ...base, icon: "check", c: "c-green", title: `${A} ticked ${T}` } : { ...base, icon: "edit", title: `${A} reopened ${T}` })
+        : { ...base, icon: "edit", title: `${A} edited ${T}` }; }
+    else if (tb === "desk_items") { const x = !up ? ch : dkB[key] || {}, hold = x.kind === "hold", who = x.client || "a client", T = `“${cut(x.title || who, 50)}”`, base = { k: hold ? "holds" : "prod", a: "" };
+      e = r.op === "insert" ? (hold ? { ...base, icon: "flag", c: "c-red", title: `${A} put ${who} on hold`, sub: x.title || "" } : { ...base, icon: "film", title: `${A} added ${T} for ${who}` })
+        : r.op === "delete" ? { ...base, icon: "x", title: `${A} removed ${T}` }
+        : has("status") && nv("status") !== "open" ? { ...base, icon: "check", c: "c-green", title: hold ? `${A} lifted the hold on ${who}` : `${A} closed ${T}` }
+        : has("stage") ? { ...base, icon: "film", title: `${A} moved “${cut(x.title || "a job", 34)}” to ${(STG[nv("stage")] || [words(nv("stage"))])[0].toLowerCase()}`, sub: who }
+        : { ...base, icon: "edit", title: `${A} updated ${T}`, sub: nv("detail") || who }; }
+    else if (tb === "touches") e = { email: ch.lead_email || "", icon: "edit", title: `${A} logged ${words(ch.kind || "a touch")} with ${nm(ch.lead_email)}`, sub: ch.summary || "" };
+    else if (tb === "clients") { const name = (!up ? ch.name : (cById[key] || {}).name) || "a client", base = { k: "client", a: "c:" + key };
+      e = r.op === "insert" ? { ...base, icon: "user", title: `${A} added the client ${name}` } : r.op === "delete" ? { ...base, icon: "x", title: `${A} removed the client ${name}` } : { ...base, icon: "user", title: `${A} edited ${name}'s details`, sub: Object.keys(ch).map(words).join(", ") }; }
+    else if (tb === "promises") { const x = !up ? ch : prB[key] || {}, em = x.lead_email || "", N = nm(em), base = em ? { email: em, sub: x.promise || "" } : { k: "feed", a: "crm", sub: x.promise || "" };
+      e = r.op === "insert" ? { ...base, icon: "flag", title: `${A} logged a promise to ${N}` } : has("status") ? { ...base, icon: "check", c: "c-green", title: `${A} marked a promise to ${N} ${words(nv("status"))}` } : { ...base, icon: "edit", title: `${A} edited a promise to ${N}` }; }
+    else if (tb === "opportunities") { const x = !up ? ch : opB[key] || {}, who = x.client || "a", base = x.email ? { email: x.email } : { k: "pipeline", a: "" };
+      e = r.op === "insert" ? { ...base, icon: "cash", title: `${A} added a deal: ${who}` } : has("stage") ? { ...base, icon: "edit", title: `${A} moved the ${who} deal to ${words(nv("stage"))}` } : { ...base, icon: "edit", title: `${A} updated the ${who} deal`, sub: nv("next_step") || "" }; }
+    else if (tb === "deal_stages") e = { k: "pipeline", a: "", icon: "edit", title: `${A} edited the deal stages` };
+    if (e) ev.push({ g: "crm", c: "c-grey", sub: "", ...e, t }); });
+  const NOUN = { pipeline: ["lead", "leads"], desk_items: ["desk item", "desk items"], founder_tasks: ["to-do", "to-dos"], clients: ["client", "clients"], promises: ["promise", "promises"], opportunities: ["deal", "deals"], touches: ["touch", "touches"] };
+  runs.forEach(g => { const ks = [...g.keys], n = ks.length, pipe = g.tb === "pipeline", names = pipe ? ks.map(k => nm(k)) : [], w = NOUN[g.tb] || ["row", "rows"];
+    ev.push({ g: "crm", quiet: true, t: g.t, icon: "refresh", c: "c-grey", title: pipe && n <= 2 ? `Sync updated ${names.join(" and ")}` : `Sync updated ${n} ${w[n === 1 ? 0 : 1]}`, sub: pipe && n > 2 ? names.join(", ") : "", ...(pipe && n === 1 ? { email: ks[0] } : { k: "feed", a: "crm" }) }); });
+  R.profiles.filter(p => !p.is_admin).forEach(p => ev.push({ g: "", t: +new Date(p.created_at), icon: "user", c: "c-purple", title: `Portal sign-up: ${p.name || p.email}`, sub: p.email || "", k: "client", a: "e:" + lc(p.email) }));
+  R.sampleReq.forEach(s => ev.push({ g: "", t: +new Date(s.created_at), icon: "film", c: "c-purple", title: `Portal sample request from ${who(s.user_id).name}`, sub: s.video_url || "", k: "psamples", a: "" }));
+  R.videos.forEach(v => ev.push({ g: "", t: +new Date(v.created_at), icon: "play", c: "c-purple", title: `Portal video request: ${v.title || "Untitled"}`, sub: who(v.user_id).name, k: "pvideos", a: "" }));
   const adds = {}; R.leadAdds.forEach(a => { (adds[a.day] || (adds[a.day] = { n: 0, tabs: [] })).n += +a.n || 0; adds[a.day].tabs.push(`${a.tab} ${a.n}`); });
-  Object.entries(adds).forEach(([day, x]) => ev.push({ t: Math.min(Date.now() - 1000, +new Date(day + "T16:00:00Z")), dateOnly: true, icon: "bolt", c: "c-ink", title: `${nf0.format(x.n)} new leads loaded`, sub: x.tabs.join(" · "), k: "day", a: day }));
-  d.feed = ev.filter(e => e.t > 0).sort((a, b) => b.t - a.t).slice(0, 80);
+  Object.entries(adds).forEach(([day, x]) => ev.push({ g: "", t: Math.min(Date.now() - 1000, +new Date(day + "T16:00:00Z")), dateOnly: true, icon: "bolt", c: "c-ink", title: `${nf0.format(x.n)} new leads loaded`, sub: x.tabs.join(" · "), k: "day", a: day }));
+  d.feed = ev.filter(e => e.t > 0).sort((a, b) => b.t - a.t).slice(0, 150);
 
   /* ---- v2: heatmap (8 weeks), reply clock ---- */
   const hs = addDays(wk, -49), serBy = Object.fromEntries(d.series.map(x => [x.day, x]));
@@ -504,7 +576,7 @@ const noteTile = g => `<div class="tile pt"><div class="pt-top">${dB("pvideos", 
   <div class="pt-lines">${g.notes.map(n => `<span><b>${mmss(n.at)}</b> ${esc(cut(n.text, 220))} <b>· ${fDT(n.created_at)}</b>${(RAW.vnotes || []).filter(r => r.parent_id === n.id).map(r => `<span class="reply-l"><b>${r.author_role === "team" ? esc(r.author_name || "Team") : "Client"}:</b> ${esc(cut(r.text, 180))}</span>`).join("")} ${act("n-reply", n.id, "Reply")}</span>`).join("")}</div>
   <div class="acts">${act("v-editing", g.video.id, "Mark editing")}${act("v-deliver", g.video.id, "Deliver new version", "go")}</div></div>`;
 const feedSeen = new Set();
-const feedRow = (e, fresh, bare) => { const inner = `<span class="it ${e.c}"><svg><use href="#i-${e.icon}"/></svg></span><span class="fe-m"><b>${esc(cut(e.title, 64))}</b>${bare ? "" : `<small>${esc(cut(e.sub, 80))}</small>`}</span><time>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</time>`;
+const feedRow = (e, fresh, bare) => { const inner = `<span class="it ${e.c}"><svg><use href="#i-${e.icon}"/></svg></span><span class="fe-m"><b>${esc(cut(e.title, 96))}</b>${bare ? "" : `<small>${esc(cut(e.sub, 80))}</small>`}</span><time>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</time>`;
   return e.email ? `<button type="button" class="fe${fresh ? " new" : ""}" data-act="lead" data-email="${esc(e.email)}">${inner}</button>` : `<button type="button" class="fe${fresh ? " new" : ""}" data-act="drill" data-k="${e.k}" data-a="${esc(e.a)}">${inner}</button>`; };
 
 /* ---------------- 11-16: Paid clients + Hot leads pages (search and owner filter; rows filter in place while typing) ---------------- */
@@ -579,7 +651,7 @@ const CARDS = [
     return `${head(`In <em class="sf">production</em>`, dB("prod", "", `${d.prod.length} open`, `chip ${w ? "o" : ""}`, "Open every piece of client work: stage, who builds it, the file"), true)}<div class="stack">${d.prod.slice(0, 6).map(prodRow).join("") || empty("Nothing is in production.")}</div>
     ${d.prod.length > 6 ? dB("prod", "", `Show all ${d.prod.length}`, "more") : ""}`; } },
 /* 11-21 (SIMAS: "a square that says action"): right after the action cards on Main; on phones under the $ hero (crm.css) */
-{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
+{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.filter(e => !e.quiet).slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
     d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
 { id: "outreach", cls: "w2 chart-card", title: "Outreach", focus: ["days", ""], render: d => {
     const OR = d.M && d.M.periods ? d.M.periods[STATE.range + "d"] : null, OQ = OR ? d.M.periods[{ 7: "prev_7d", 30: "prev_30d" }[STATE.range]] : null, days = d.series.slice(-STATE.range), was = d.series.slice(-2 * STATE.range, -STATE.range),
@@ -759,8 +831,9 @@ function updateHero(d) {
     nl = isT ? `${N(d.todayNew)}<small>/ ${nf0.format(d.target)}</small>` : N(P.nw) + dl(P.dNw, P.vsN, pn);
   part("kpis", `${dB("pays", "period", `<span><i class="c-green"></i>Payments · ${P.chip}</span><b>${N(P.revN)}${P.key === "month" ? "" : `<small>${usd(P.rev)}</small>`}</b>`, "kpi")}${dB(isT ? "day" : "days", isT ? d.t : "", `<span><i class="c-blue"></i>New leads · ${P.chip}</span><b>${nl}</b>`, "kpi")}${dB("replies", "real", `<span><i class="c-blue2"></i>Real replies · ${P.chip}</span><b>${N(P.rep)}${dl(P.dRep, P.vsN, pn)}</b>`, "kpi")}${dB("samples", "period", `<span><i class="c-orange"></i>Samples · ${P.chip}</span><b>${N(P.samples)}${dl(P.dSamples, P.vsS, po)}</b>`, "kpi")}${dB("hotlist", "", `<span><i class="c-red"></i>Hot leads now</span><b>${N(d.hot.length)}</b>`, "kpi")}${dB("att", "reply", `<span><i class="c-purple"></i>Replies waiting</span><b>${N((d.att.reply || []).length)}</b>`, "kpi")}`, "hero-kpis");
   const trk = $("#trk"); $(".fill", trk).style.setProperty("--w", w); $(".head", trk).style.setProperty("--w", w); $(".pace", trk).style.setProperty("--x", mp + "%"); $("#trk-pc").style.setProperty("--x", clamp(mp, 12, 88) + "%");
-  const tk = hid => d.feed.slice(0, 12).map(e => `<button type="button" ${hid ? 'tabindex="-1" aria-hidden="true" ' : ""}${e.email ? `data-act="lead" data-email="${esc(e.email)}"` : `data-act="drill" data-k="${e.k}" data-a="${esc(e.a)}"`}><i class="${e.c}"></i>${esc(cut(e.title, 52))}<em>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</em></button>`).join(""), items = tk(false);
-  if (HERO.tick !== items) { HERO.tick = items; const t = $("#ticker-t"); t.innerHTML = items + tk(true); t.style.setProperty("--dur", Math.max(30, d.feed.slice(0, 12).length * 6) + "s"); }
+  const tf = d.feed.filter(e => /^(money|reply|deliv)$/.test(e.g)).slice(0, 12);   // 11-21: the ticker keeps to money, replies and deliveries
+  const tk = hid => tf.map(e => `<button type="button" ${hid ? 'tabindex="-1" aria-hidden="true" ' : ""}${e.email ? `data-act="lead" data-email="${esc(e.email)}"` : `data-act="drill" data-k="${e.k}" data-a="${esc(e.a)}"`}><i class="${e.c}"></i>${esc(cut(e.title, 52))}<em>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</em></button>`).join(""), items = tk(false);
+  if (HERO.tick !== items) { HERO.tick = items; const t = $("#ticker-t"); t.innerHTML = items + tk(true); t.style.setProperty("--dur", Math.max(30, tf.length * 6) + "s"); }
   $$("#hero .per button").forEach(b => { const on = b.dataset.p === STATE.period; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
 }
 
@@ -919,7 +992,8 @@ const DR = {
     return { title, sub: `${list.length} answered repl${list.length === 1 ? "y" : "ies"} · median ${fmtMin(med(list.map(x => x.g)))} · an estimate from the synced threads`, html: stackOf(list.slice(0, 150).map(x => lrow({ email: x.e, name: nameOf(x.e) }, `their email ${fDT(x.t)}`, `<span class="row-end ${x.g <= 60 ? "up" : x.g > 1440 ? "dn" : ""}">${fmtMin(x.g)}<small>until our reply</small></span>`)), "No answered reply in this list.") }; },
   deliv() { const list = [...RAW.camps].filter(c => c.emails_sent).map(c => ({ ...c, rate: (c.bounced || 0) / c.emails_sent * 100 })).sort((x, y) => y.rate - x.rate);
     return { title: "Deliverability", sub: `${nf0.format(D.bounced)} bounced of ${nf0.format(D.sentAll)} sent · ${D.deliv.rate.toFixed(2)}% · keep every campaign under 2%`, html: tbl(["Campaign", "Sent", "Bounced", "Bounce %", "Unsubscribed"], list.map(c => `<tr><td>${dB("camp", c.campaign_id, esc(campName(c.name)), "lk")}</td><td>${nf0.format(c.emails_sent)}</td><td>${nf0.format(c.bounced || 0)}</td><td class="${c.rate > 2 ? "dn" : ""}">${c.rate.toFixed(2)}%</td><td>${nf0.format(c.unsubscribed || 0)}</td></tr>`)) + `<div class="acts sp">${dB("inboxes", "", "Open the inboxes", "act")}</div>` }; },
-  feed() { return { title: "Activity", sub: "Payments, replies, samples, portal and lead loads, newest first", html: `<div class="feed">${D.feed.map(e => feedRow(e, false)).join("")}</div>` }; },
+  feed(a) { const F = [["", "All"], ["money", "Money"], ["reply", "Replies"], ["crm", "CRM changes"], ["call", "Calls"], ["deliv", "Deliveries"]], f = F.some(x => x[0] === a) ? a : "", list = D.feed.filter(e => !f || e.g === f);
+    return { title: "Activity", sub: "Payments, replies, CRM changes, calls and deliveries, newest first", html: `<div class="ffl" role="group" aria-label="Show">${F.map(([k, l]) => `<button type="button" data-act="feedf" data-f="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div><div class="feed">${list.map(e => feedRow(e, false)).join("") || empty("Nothing here in the last two weeks.")}</div>` }; },
   pipeline(a) { const L = (RAW.stages || []).filter(x => STATE.owner === "All" || (x.owner || "") === STATE.owner), list = (a === "overdue" ? L.filter(x => x.is_open && x.overdue) : a ? L.filter(x => x.stage === a) : L.filter(x => x.is_open))
       .sort((x, y) => x.ord - y.ord || +y.overdue - +x.overdue || (+y.days_in_stage || 0) - (+x.days_in_stage || 0)), by = {}; list.forEach(x => (by[x.stage] = by[x.stage] || []).push(x));
     return { title: a === "overdue" ? "Overdue in their stage" : a ? STAGE_L[a] || a : "Open pipeline", sub: `${list.length} lead${list.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}`} · stage from evidence · days in the stage on the right`,
@@ -1495,6 +1569,7 @@ document.addEventListener("click", ev => {
   const a = b.dataset.act;
   if (a === "lead") openLead(b.dataset.email, b);
   else if (a === "drill") openDrill(b.dataset.k, b.dataset.a, b);
+  else if (a === "feedf") { const s = STATE.drill, top = STACK[STACK.length - 1]; if (s && s.k === "feed") { s.a = b.dataset.f; if (top && top.k === "feed") top.a = s.a; showDrill(DR.feed(s.a), SEQ); const nb = $(`[data-act="feedf"][data-f="${s.a}"]`); if (nb) nb.focus(); } }   // Activity filter chips: swap the list in place, no new back step
   else if (a === "back") { if (STACK.length > 1) { STACK.pop(); const s = STACK[STACK.length - 1]; openDrill(s.k, s.a, null, true); } }
   else if (a === "mclose") closeDrill();
   else if (a === "owner") { STATE.owner = b.dataset.o; STATE.att = ""; renderAll(); }
