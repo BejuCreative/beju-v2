@@ -1117,7 +1117,8 @@ const callTask = t => `<li class="ctask${t.done_at ? " done" : ""}" data-owner="
 const callCard = ({ c, n, tasks }) => {
   const who = cut(String(c.title || "").replace(CALL_TITLE, "").trim() || c.name || c.email || "Call", 60), rec = n && n.recording_url ? safeUrl(n.recording_url) : "";
   const missing = !n && +new Date(c.end_at || c.start_at) < Date.now() - 2 * 36e5;   // ended over 2 h ago, nothing written
-  return `<div class="tile ccall"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : missing ? `<p class="cc-miss">Notes missing</p>` : ""}</div>`;
+  const add = !n && +new Date(c.start_at) <= Date.now() ? `<button type="button" class="act cc-add" data-act="cnadd" data-uid="${esc(c.uid)}" data-email="${esc(lc(c.email))}">${ic("edit")}Add call notes</button>` : "";
+  return `<div class="tile ccall" data-uid="${esc(c.uid)}"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : `${missing ? `<p class="cc-miss">Notes missing</p>` : ""}${add}`}</div>`;
 };
 const callsList = rows => rows.length ? `<div class="stack">${rows.map(callCard).join("")}</div>` : "";
 async function ctDone(id, btn) {   // tick / untick one call task
@@ -1130,6 +1131,33 @@ async function ctDone(id, btn) {   // tick / untick one call task
     toast(on ? "Task done" : "Task open again", "check", "c-green");
   } catch (e) { toast("Couldn't save the tick", "alert", "c-red", cut(e && e.message || e, 120)); }
   btn.disabled = false;
+}
+const CN_OWN = ["Simas", "Benas", "Both"];
+const callNotesForm = (uid, email) => { const me = founderName(); return `<form class="cnform dlg sp" data-uid="${esc(uid)}" data-email="${esc(email)}" novalidate>
+  <label class="fld"><span>Summary, 2-3 short lines</span><textarea name="summary" rows="3" maxlength="600" required></textarea></label>
+  <label class="fld"><span>Key takeaways, one per line (up to 5)</span><textarea name="takeaways" rows="4" maxlength="1500"></textarea></label>
+  <div class="fld"><span>Next tasks</span>${[0, 1, 2].map(i => `<div class="cn-t"><input type="text" name="t${i}" maxlength="300" autocomplete="off" placeholder="Task" aria-label="Task ${i + 1}"><select name="o${i}" aria-label="Owner of task ${i + 1}">${CN_OWN.map(o => `<option${o === me ? " selected" : ""}>${o}</option>`).join("")}</select><input type="date" name="d${i}" aria-label="Due date of task ${i + 1}"></div>`).join("")}</div>
+  <label class="fld"><span>Recording or transcript link</span><input type="url" name="rec" maxlength="1000" autocomplete="off" placeholder="https://"></label>
+  <p class="dlg-err" hidden></p><div class="acts"><button type="button" class="act" data-act="cncancel">Cancel</button><button type="submit" class="act go">${ic("check")}Save call notes</button></div></form>`; };
+async function saveCallNotes(f) {
+  const g = n => (f.elements[n] ? String(f.elements[n].value || "").trim() : ""), err = $(".dlg-err", f), go = $('button[type="submit"]', f), email = lc(f.dataset.email), uid = f.dataset.uid;
+  const say = t => { err.hidden = false; err.textContent = t; }, summary = g("summary"), rec = g("rec");
+  const takeaways = g("takeaways").split("\n").map(x => x.replace(/^\s*[-•*]\s*/, "").trim()).filter(Boolean);
+  const tasks = [0, 1, 2].map(i => ({ text: g("t" + i), owner: g("o" + i), day: g("d" + i) })).filter(t => t.text);
+  if (!summary) { say("Write a short summary."); f.elements.summary.focus(); return; }
+  if (takeaways.length > 5) { say("Keep it to 5 takeaways."); return; }
+  if (rec && !safeUrl(rec)) { say("The link must start with https://"); return; }
+  if (tasks.some(t => !CN_OWN.includes(t.owner))) { say("Pick an owner for each task."); return; }
+  go.disabled = true; err.hidden = true;
+  let t0;
+  try { [t0] = await must(sb.from("touches").insert({ lead_email: email, kind: "call", direction: "out", at: nowIso(), summary, takeaways: takeaways.length ? takeaways : null, recording_url: rec ? safeUrl(rec) : null, call_uid: uid, actor: founderName(), source: "crm" }).select("id")); }
+  catch (e) { say(/duplicate|unique/i.test(e && e.message || "") ? "This call already has notes. Close and reopen the profile to see them." : `Couldn't save: ${cut(e && e.message || e, 140)}`); go.disabled = false; return; }
+  let bad = "";
+  if (tasks.length) try { await must(sb.from("call_tasks").insert(tasks.map(t => ({ touch_id: t0.id, lead_email: email, text: t.text, owner: t.owner, due_at: /^\d{4}-\d{2}-\d{2}$/.test(t.day) ? tzAt(t.day, 12) : null })))); } catch (e) { bad = cut(e && e.message || e, 120); }
+  toast(bad ? "Notes saved, tasks not saved" : "Call notes saved", bad ? "alert" : "check", bad ? "c-red" : "c-green", bad || nameOf(email));
+  const card = f.closest(".ccall"), row = (await loadCalls([email]).catch(() => [])).find(r => r.c.uid === uid);
+  if (card && card.isConnected && row) card.outerHTML = callCard(row);
+  if ($("#drawer").dataset.email === email) drReload(email).catch(() => {});
 }
 window.BEJU_CRM_CALLS = async ems => callsList(await loadCalls(ems || []));   // side.js: the same section on the Clients page
 
@@ -1486,6 +1514,8 @@ document.addEventListener("click", ev => {
   else if (a === "todayall") { STATE.todayAll = !STATE.todayAll; renderAll(); }
   else if (a === "ftdone") ftDone(b.dataset.id, b);
   else if (a === "ctdone") ctDone(b.dataset.id, b);
+  else if (a === "cnadd") { b.hidden = true; b.insertAdjacentHTML("afterend", callNotesForm(b.dataset.uid, b.dataset.email)); const t = b.nextElementSibling && $("textarea", b.nextElementSibling); if (t) t.focus(); }
+  else if (a === "cncancel") { const f = b.closest("form"), add = f && f.previousElementSibling; if (f) f.remove(); if (add && add.dataset.act === "cnadd") { add.hidden = false; add.focus(); } }
   else if (a === "look") setTheme(b.dataset.t, true);
   else if (a === "motion") setMotion(motionFull() ? "calm" : "full", true);
   else if (a === "refresh") refresh(true).catch(() => {});
@@ -1504,7 +1534,7 @@ document.addEventListener("click", ev => {
   else if (a === "copy") { const t = b.dataset.t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Email copied", "copy", "c-green", t)).catch(() => toast("Copy did not work here", "alert", "c-red", t)); }
 });
 $("#dlg-form").addEventListener("submit", ev => { ev.preventDefault(); askSubmit(); });
-document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
+document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("cnform")) { ev.preventDefault(); saveCallNotes(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
 $("#dlg").addEventListener("change", ev => { if (ev.target.dataset.k === "pack") { const p = PACKS.find(x => x[0] === ev.target.value); if (p) { $('[data-k="videos"]', $("#dlg")).value = p[2]; $('[data-k="amount"]', $("#dlg")).value = p[3]; } } });
 /* charts: hover, tap and arrow keys all go through PLOT[id] */
 function plotAt(box, ev, go) {
