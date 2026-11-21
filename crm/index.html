@@ -20,7 +20,7 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261121nt1">
+<link rel="stylesheet" href="crm.css?v=20261121m5">
 <link rel="stylesheet" href="side.css?v=20261121c6">
 <link rel="stylesheet" href="contacts.css?v=20261121ct1">
 </head>
@@ -159,12 +159,16 @@
 <!-- founder navigation sidebar (SIMAS 11-19 15:0x redesign): floating glass rail, always on screen; each item opens its own page (?p=) -->
 <nav id="snav" class="snav" aria-label="Founder CRM" hidden>
   <div class="sn-top">
-    <a class="sn-brand" href="./" data-nav="dashboard" aria-label="BEJÚ Founder CRM, Dashboard"><span class="sn-logo"><img src="icon-64.png?v=20261119i1" alt="" width="34" height="34"></span><span class="sn-lbl"><b>BEJÚ</b><small>Founder CRM</small></span></a>
+    <a class="sn-brand" href="./" data-nav="dashboard" data-act="tab" data-t="home" aria-label="BEJÚ Founder CRM, Dashboard"><span class="sn-logo"><img src="icon-64.png?v=20261119i1" alt="" width="34" height="34"></span><span class="sn-lbl"><b>BEJÚ</b><small>Founder CRM</small></span></a>
     <button type="button" class="sn-tog" id="sn-tog" aria-label="Collapse the menu" aria-expanded="true" title="Collapse  ( [ )"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
   </div>
   <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
   <ul class="sn-list">
-    <li><a href="./" data-nav="dashboard" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
+    <li><a href="./" data-nav="dashboard" data-act="tab" data-t="home" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
+    <!-- BENAS 11-21 19:2x: the dashboard's other tabs (the main page keeps only the work queue); phones use the bottom bar -->
+    <li class="sn-tab"><button type="button" data-act="tab" data-t="money" data-tip="Money"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Money</span></button></li>
+    <li class="sn-tab"><button type="button" data-act="tab" data-t="leads" data-tip="Leads"><svg aria-hidden="true"><use href="#i-user"/></svg><span class="sn-lbl">Leads</span></button></li>
+    <li class="sn-tab"><button type="button" data-act="tab" data-t="outreach" data-tip="Outreach"><svg aria-hidden="true"><use href="#i-send"/></svg><span class="sn-lbl">Outreach</span></button></li>
     <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
     <li><a href="?p=email" data-nav="email" data-tip="Email tests"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="sn-lbl">Email tests</span></a></li>
     <li><a href="?p=clients" data-nav="clients" data-tip="Clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span class="sn-lbl">Clients</span></a></li>
@@ -192,7 +196,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261121ct1"></script>
+<script src="crm.js?v=20261121m5"></script>
 <script src="contacts.js?v=20261121ct1"></script>
 <script src="side.js?v=20261121ct1"></script>
 </body>
