@@ -980,32 +980,37 @@ async function openLead(email, opener, keepNav) {
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
   const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
-  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
+  // 11-21 (BENAS): the top says where the deal stands: stage, the next step with its owner, the deal (plan / size); then the conversation
+  body.innerHTML = `<div class="dr-sec dr-sum"><div class="dt"><span class="dt-l">Stage</span><div class="dt-v">${st ? stageChip(st) : `<span class="mut">No stage yet</span>`}${st && st.evidence ? `<small>${esc(cut(st.evidence, 220))}</small>` : ""}</div></div>
+      ${nextSec(email, p)}${dealRow(email, st, null, null)}
+      <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}<div id="dr-tf"></div></div>
-    ${p ? `<div class="dr-sec"><div class="dr-chips">${st ? stageChip(st) : ""}<span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div>${st && st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>
-    ${nextSec(email, p)}
+    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>
+    ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
-    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : `${st ? `<div class="dr-sec"><div class="dr-chips">${stageChip(st)}</div>${st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>` : ""}${nextSec(email, null)}`}
-    <div class="dr-sec" id="dr-more"><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>`;
+    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
+    <div id="dr-more"></div>`;
   const dr = $("#drawer"), sc = $("#scrim"); dr.hidden = sc.hidden = false; dr.dataset.email = email;
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
   const ems = [...new Set([email, p ? lc(p.email) : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || []).map(lc)].filter(Boolean))]; DR_EMS = ems; TL = { rows: null, all: false };
   try {
-    const [prom, notes, msgs, tl, calls] = await Promise.all([
+    const [prom, notes, msgs, tl, calls, opps, scopes] = await Promise.all([
       must(sb.from("promises").select("promise,due_at,status,owner").eq("lead_email", email).eq("status", "open").order("due_at")),
       must(sb.from("client_notes").select("kind,note,created_at").eq("lead_email", email).order("created_at", { ascending: false }).limit(5)),
       loadConv([email, p ? p.email : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || [])]),   // a buyer with several addresses: one merged conversation
       loadTl(ems),
       loadCalls(ems).catch(() => []),
+      must(sb.from("opportunities").select("what,value_usd,monthly,stage,owner").in("email", ems).is("closed_at", null)).catch(() => []),
+      must(sb.from("scopes").select("offer,amount,monthly,status,sent_at").in("email", ems)).catch(() => []),
     ]);
     if (dr.dataset.email !== email) return;
     TL.rows = tl;
+    const dl = $("#dr-deal"); if (dl) dl.outerHTML = dealRow(email, st, opps, scopes);
+    $("#dr-conv").innerHTML = `<h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}`;
     $("#dr-more").outerHTML = `${tlSec()}${prom.length ? `<div class="dr-sec"><h3>Open promises</h3><div class="stack">${prom.map(x => `<div class="tile note"><small>${esc(x.owner || "")} · due ${fDT(x.due_at)}</small>${esc(cut(x.promise, 300))}</div>`).join("")}</div></div>` : ""}
       ${notes.length ? `<div class="dr-sec"><h3>Client notes</h3><div class="stack">${notes.map(x => `<div class="tile note"><small>${esc(x.kind || "note")} · ${dLabel(dayOf(x.created_at))}</small>${esc(cut(x.note, 400))}</div>`).join("")}</div></div>` : ""}
-      <div class="dr-sec"><h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}</div>
       ${calls.length ? `<div class="dr-sec" id="dr-calls"><h3>Calls</h3>${callsList(calls)}</div>` : ""}`;
-    if (PHONE.matches) { const bd = $("#dr-body"); bd.scrollTop = bd.scrollHeight; }
-  } catch (e) { const m2 = $("#dr-more"); if (m2) m2.innerHTML = empty("Couldn't load the thread. Try again."); }
+  } catch (e) { const c2 = $("#dr-conv"); if (c2) c2.innerHTML = `<h3>Conversation</h3>${empty("Couldn't load the thread. Try again.")}`; }
 }
 const igOf = email => { const c = RAW.clients.find(x => (x.emails || []).some(e => lc(e) === lc(email))); return c && c.instagram ? String(c.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : ""; };
 function navLead(dir) { const dr = $("#drawer"); if (dr.hidden) return; const i = NAV.indexOf(dr.dataset.email) + dir; if (i >= 0 && i < NAV.length) openLead(NAV[i], null, true); }
@@ -1047,10 +1052,24 @@ function tlSec() {
   const show = TL.all ? R : R.slice(0, 15);
   return `<div class="dr-sec" id="dr-tl"><h3>Touchpoints</h3>${R.length ? `<div class="feed">${show.map(tlRow).join("")}</div>${R.length > 15 ? `<button type="button" class="more" data-act="tlall">${TL.all ? "Show fewer" : `Show all ${R.length}`}</button>` : ""}` : empty("Nothing logged for this lead yet.")}</div>`;
 }
+const whoOf = x => /simas/i.test(x || "") ? "Simas" : /benas/i.test(x || "") ? "Benas" : /both/i.test(x || "") ? "Both" : x || "";
 function nextSec(email, p) {
-  const n = nextOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
-  if (!n && !p) return `<div id="dr-next" hidden></div>`;
-  return `<div class="dr-sec" id="dr-next"><h3>Next step${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}</h3><p class="dr-txt">${esc(txt || "None set")}</p></div>`;
+  const n = nextOf(email), st = stageOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
+  const own = whoOf((st && st.owner) || (p && p.owner) || (n && n.actor));
+  return `<div class="dt" id="dr-next"><span class="dt-l">Next step</span><div class="dt-v">${own || at ? `<b>${esc(own || "No owner")}</b>${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}` : ""}<p class="dr-txt">${esc(txt || "None set")}</p></div></div>`;
+}
+/* the deal: a live retainer, an open opportunity (plan + size), else the latest scope; plus what they paid so far */
+function dealRow(email, st, opps, scopes) {
+  const ems = DR_EMS.length && DR_EMS.includes(email) ? DR_EMS : [email], has = e => ems.includes(lc(e)), per = (v, mo) => `${usd(v)}${mo ? "/mo" : ""}`;
+  const ret = (RAW.retainers || []).find(r => has(r.email) && /^(active|trialing|past_due)$/i.test(r.status || "")), opp = (opps || [])[0];
+  const sc = (scopes || []).filter(x => x.offer || x.amount).sort((a, b) => String(b.sent_at || "").localeCompare(String(a.sent_at || "")))[0];
+  const cl = RAW.clients.find(c => (c.emails || []).some(has)), paid = sum(D.pays.filter(x => (x.email && has(x.email)) || (cl && x.client_id === cl.id)), x => x.amount), lines = [];
+  if (ret) lines.push(`Retainer ${per(ret.amount, ret.interval === "month")}${ret.cancel_at_period_end ? " · ends at period end" : ""}`);
+  if (opp) lines.push(`${ret ? "Offer: " : ""}${esc(cut(opp.what || "Deal", 110))} · ${opp.value_usd ? per(opp.value_usd, opp.monthly) : "size not set"}${opp.stage ? " · " + esc(opp.stage) : ""}`);
+  else if (sc && !ret) lines.push(`${esc(sc.offer || "Scope")}${sc.amount ? " · " + per(sc.amount, sc.monthly) : ""} · scope ${esc(sc.status || "")}`);
+  else if (!ret && st && +st.opp_value) lines.push(per(st.opp_value));
+  const none = paid ? `Packs · paid ${usd(paid)} so far` : `<span class="mut">No plan yet</span>`;
+  return `<div class="dt" id="dr-deal"><span class="dt-l">Deal</span><div class="dt-v">${lines.length ? lines.map(l => `<p>${l}</p>`).join("") + (paid ? `<small>paid ${usd(paid)} so far</small>` : "") : none}</div></div>`;
 }
 async function drReload(email) {   // after a touch is logged: fresh touchpoints + next step
   const [tl, ns] = await Promise.all([loadTl(DR_EMS), must(sb.from("lead_next_step").select("*").eq("email", email).maybeSingle()).catch(() => undefined)]);

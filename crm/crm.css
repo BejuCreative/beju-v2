@@ -1063,3 +1063,11 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .cc-rec{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:12.5px}
 .cc-rec .ic{width:15px;height:15px}
 @media (max-width:600px){.ctick{width:24px;height:24px} .ct-m{white-space:normal}}
+/* 11-21 lead drawer top (Benas), class dr-sum: stage, next step with its owner, the deal; then the conversation */
+.dr-sum .dt{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.dr-sum .dt:first-child{padding-top:0}
+.dr-sum .dt-l{color:var(--mute);font-size:12px;padding-top:3px}
+.dr-sum .dt-v{min-width:0;font-size:13.5px;overflow-wrap:anywhere}
+.dr-sum .dt-v small{display:block;color:var(--mute);font-size:12px;margin-top:4px}
+.dr-sum .dt-v .dr-txt{margin-top:2px}
+.dr-sum .dt-v p+p{margin-top:3px}
