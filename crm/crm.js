@@ -324,16 +324,13 @@ function derive() {
   Object.entries(adds).forEach(([day, x]) => ev.push({ t: Math.min(Date.now() - 1000, +new Date(day + "T16:00:00Z")), dateOnly: true, icon: "bolt", c: "c-ink", title: `${nf0.format(x.n)} new leads loaded`, sub: x.tabs.join(" · "), k: "day", a: day }));
   d.feed = ev.filter(e => e.t > 0).sort((a, b) => b.t - a.t).slice(0, 80);
 
-  /* ---- v2: heatmap (8 weeks), reply clock, scoreboard ---- */
+  /* ---- v2: heatmap (8 weeks), reply clock ---- */
   const hs = addDays(wk, -49), serBy = Object.fromEntries(d.series.map(x => [x.day, x]));
   d.heat = { rows: [], max: 1, weeks: [] };
   for (let w = 0; w < 8; w++) d.heat.weeks.push(addDays(hs, w * 7));
   for (let r = 0; r < 7; r++) { const row = []; for (let w = 0; w < 8; w++) { const day = addDays(hs, w * 7 + r), x = serBy[day]; row.push({ day, n: x ? x.nw : 0, fut: day > t }); d.heat.max = Math.max(d.heat.max, x ? x.nw : 0); } d.heat.rows.push(row); }
   const hrsN = Array(24).fill(0); R.replies.filter(r => r.kind === "REAL").forEach(r => { hrsN[hourOf(r.received_at)]++; });
   d.clock = { h: hrsN, max: Math.max(1, ...hrsN), total: sum(hrsN, x => x), peak: hrsN.indexOf(Math.max(...hrsN)) };
-  const of = o => R.pipeline.filter(p => p.owner === o), cnt = (o, f) => of(o).filter(f).length, wait = o => R.attention.filter(a => a.kind === "reply" && a.owner === o).length;
-  d.score = [["Hot leads", "hot", p => (p.status || "").toUpperCase() === "HOT"], ["Samples delivered", "samples", p => !!p.delivered_at], ["Buyers", "buyers", isBuyer]].map(([label, k, f]) => ({ label, k, a: cnt("Simas", f), b: cnt("Benas", f) }))
-    .concat([{ label: "Replies waiting", k: "waiting", a: wait("Simas"), b: wait("Benas") }]);
 
   /* ---- v2: conversations (message counts) + speed to reply (an estimate: threads do not say which inbound mails are auto-replies, the reply queue does for the last 60 days) ---- */
   const byLead = {}; R.tlite.forEach(m => { (byLead[lc(m.lead_email)] || (byLead[lc(m.lead_email)] = [])).push(m); });
@@ -541,6 +538,9 @@ const priceFor = n => { const P = PRICE_PTS, L = P[P.length - 1]; let v; if (n >
 const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
 /* ---------------- cards ---------------- */
+/* 11-21 (BENAS): hidden, code kept. moneypage: crm/money.html is 404 on the live site. Client portal zone: videos,
+   sample_requests, purchases, video_notes, video_versions all have 0 rows. Take an id out of this set to show it again. */
+const HIDDEN = new Set(["moneypage", "portal", "psamples", "pvideos", "pnotes", "pclients"]);
 const CARDS = [
 { id: "brand", cls: "brand", title: "Status", mount(el) {
     el.innerHTML = `<div class="brand-top"><button type="button" class="brandrow" data-act="drill" data-k="me" data-a="" title="Your login and the shortcuts"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span class="bt"><b>BEJÚ</b><small>Founder CRM</small></span></button>
@@ -597,8 +597,6 @@ const CARDS = [
       <span class="ring-mid"><span><b>${C.med == null ? "—" : Number.isInteger(C.med) ? N(C.med) : C.med.toFixed(1)}</b><small>emails, typical</small></span></span>`, "ring", "Ring: share of paying clients who paid within 5 of our emails. Middle: the typical (median) number of emails we sent before a client's first payment. Open the list.")}
     ${kv("Paid within 5 emails", C.in5 == null ? "—" : N(C.in5, "pct"), "close", "")}<hr>
     ${kv("Average", C.avg == null ? "—" : C.avg.toFixed(1), "close", "")}`; } },
-{ id: "owner", cls: "bare", title: "Owner filter", mount(el) { el.innerHTML = `<div class="seg" role="group" aria-label="Whose leads">${["All", "Simas", "Benas"].map(o => `<button type="button" data-act="owner" data-o="${o}">${o}</button>`).join("")}</div>`; },
-  update() { $$("#c-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); } },
 { id: "hot", title: "Hot leads", focus: ["hotlist", ""], render: d => { const list = STATE.hotAll ? d.hot : d.hot.slice(0, 6);
     return `${head("Hot leads", sortB("hotSort", STATE.hotSort, { wait: "waiting on us", next: "next action", reply: "last reply" }), true)}<div class="stack">${list.map(({ p, us }) => leadBtn(p.email, `<span class="av${us ? " hot" : ""}" title="${esc(cut(p.show || "", 80))}">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email)}</b></span>`)).join("") || empty("No hot leads right now.")}</div>
     ${d.hot.length > 6 ? `<button type="button" class="more" data-act="hotall">${STATE.hotAll ? "Show fewer" : `Show all ${d.hot.length}`}</button>` : ""}`; } },
@@ -607,8 +605,6 @@ const CARDS = [
 { id: "moods", title: "Buyer moods", render: d => `${head("Buyer moods")}
     <div class="tile row-pad"><div class="segbar">${d.moods.map(m => `<button type="button" class="${m.c}" data-act="drill" data-k="mood" data-a="${m.k}" data-v="g:${m.n}" title="${m.label}: ${m.n}" aria-label="${m.label}: ${m.n} leads. Open them."></button>`).join("")}</div>
     <div class="legend">${d.moods.map(m => dB("mood", m.k, `<i class="dot ${m.c}"></i><span>${m.label}</span><b>${m.n}</b>`, "lg")).join("") || empty("No leads.")}</div></div>` },
-{ id: "score", title: "Scoreboard", render: d => `${head("Scoreboard")}<div class="vs"><button type="button" data-act="owner" data-o="Simas" title="Show only Simas's leads">Simas</button><span>vs</span><button type="button" data-act="owner" data-o="Benas" title="Show only Benas's leads">Benas</button></div><div class="sc">${d.score.map(s => { const m = Math.max(1, s.a, s.b);
-      return `<div class="sc-r"><div class="sc-l">${dB("owner", "Simas|" + s.k, N(s.a), "scb", `Simas, ${s.label}: ${s.a}. Open them.`)}<span>${s.label}</span>${dB("owner", "Benas|" + s.k, N(s.b), "scb r", `Benas, ${s.label}: ${s.b}. Open them.`)}</div><div class="sc-b"><span><i data-v="w:${(s.a / m * 100).toFixed(1)}%"></i></span><span><i data-v="w:${(s.b / m * 100).toFixed(1)}%"></i></span></div></div>`; }).join("")}</div>` },
 { id: "attention", title: "Needs attention", render: d => { const K = { reply: ["Replies waiting", "mail", "c-blue"], followup: ["Follow-ups due", "clock", "c-orange"], overdue: ["Overdue actions", "alert", "c-red"], paid_waiting: ["Paid, not delivered", "cash", "c-green"], promises: ["Promises past due", "flag", "c-ink"], brief: ["Said yes, no brief", "film", "c-purple"], followup_done: ["Finished, park", "check", "c-grey"] };
     const kinds = Object.keys(K).filter(k => d.att[k]?.length).concat(Object.keys(d.att).filter(k => !K[k]));
     return `${head("Needs attention", dB("att", "all", d.attTotal, `chip ${d.attTotal ? "o" : "g"}`, "Open everything that needs attention"), true)}<div class="stack">${kinds.map(k => { const [label, icon, c] = K[k] || [k, "alert", "c-grey"], list = d.att[k], open = STATE.att === k;
@@ -675,12 +671,9 @@ const CARDS = [
 { id: "videos", title: "Videos delivered", render: d => { const max = Math.max(1, ...d.vid.weeks.map(w => w.n));
     return `${head("Videos delivered")}${big("vids", "all", N(d.vid.total), "Open the delivered videos")}
     <div class="wk mini">${d.vid.weeks.map((w, i) => `<button type="button" class="${i === 7 ? "on" : ""}" data-act="drill" data-k="vids" data-a="${w.s}" data-v="h:${(w.n / max * 100).toFixed(1)}%;k:${i}" title="Week of ${dLabel(w.s)}: ${w.n} videos" aria-label="Week of ${dLabel(w.s)}: ${w.n} videos. Open them."></button>`).join("")}</div>`; } },
-{ id: "search", cls: "bare", title: "Search leads", mount(el) { el.innerHTML = `<div class="tile"><label class="search">${ic("search")}<input id="q" type="search" placeholder="Search leads" autocomplete="off" spellcheck="false" aria-label="Search leads" aria-controls="res"><span class="kbd" aria-hidden="true">/</span></label><div class="res" id="res" role="listbox" aria-label="Results"></div></div>`; }, update() { renderSearch(); } },
-{ id: "theme", title: "Look", mount(el) { el.innerHTML = `${head("Look", `<span class="chip" data-look-name></span>${dB("look", "", ic("expand"), "xp", "All looks")}`)}<div class="looks" role="group" aria-label="Colour theme">${THEMES.map(t => `<button type="button" class="lkb" data-act="look" data-t="${t[0]}" aria-pressed="false" aria-label="${t[1]} look" title="${t[1]}"><span class="thsw" data-th="${t[0]}"></span></button>`).join("")}</div><div class="swrow"><span><b>Motion: <span data-motion-l></span></b></span><button type="button" class="sw" role="switch" data-act="motion" aria-checked="true" aria-label="Ambient motion"></button></div>`; }, update() { syncLook(); } },
 { id: "portal", title: "Client portal numbers", render: d => `${head("Client portal", `<button type="button" class="chip ${d.pOpen ? "o" : ""}" data-act="jump" data-id="psamples" title="Jump to the portal queues">${d.pOpen} open</button>`)}<button type="button" class="big tapn" data-act="jump" data-id="pclients" title="Jump to the portal sign-ups">${N(d.portal.signups)}<small>sign-ups</small></button>
     <div class="stack sp"><button type="button" class="kv" data-act="jump" data-id="psamples"><span>Sample requests</span><span>${N(d.portal.req)}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos in edit</span><span>${N(d.portal.edit)}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos ready</span><span>${N(d.portal.ready)}</span></button></div>` },
 { id: "sync", title: "Sync status", render: d => `<div class="stack">${d.sync.map(s => dB("sync", s.name, `<span class="it ${s.ok ? "c-ink" : "c-red"}"><svg><use href="#i-${s.ok ? "check" : "alert"}"/></svg></span><span class="row-main"><b>${esc({ instantly: "Sending", replies: "Replies", sheet: "Samples" }[s.name] || s.name)}</b></span><span class="row-end"><small>${ago(s.ran_at)}</small></span>`, "tile row")).join("") || empty("No sync info.")}</div>` },
-{ id: "export", title: "Export", mount(el) { el.innerHTML = `<button type="button" class="export mag" id="export" data-act="export"><i></i><span id="export-t"><svg><use href="#i-down"/></svg>Export leads CSV</span></button>`; }, update() {} },
 { id: "moneypage", title: "Money page", mount(el) { el.innerHTML = `${head("💰 Money")}<div class="acts sp"><a class="act go" href="money.html">${ic("cash")}Open the Money page</a></div>`; }, update() {} },
 { id: "price", title: "Price calculator", mount(el) {   // 11-18 (Simas): drag to N Shorts a month, see the monthly retainer. Reads and writes nothing.
     el.innerHTML = `${head("Price calculator")}<div class="big" id="calc-p"></div><p class="sub" id="calc-per"></p>
@@ -705,11 +698,11 @@ const CARDS = [
 { id: "pvideos", grid: 2, cls: "w2", title: "Portal: video requests", focus: ["pvideos", ""], render: d => `${head("Video requests", dB("pvideos", "", d.pVideos.length, `chip ${d.pVideos.some(v => /^(received|revision)$/.test(v.status)) ? "o" : ""}`, "Open every video request"), true)}<div class="stack two">${d.pVideos.slice(0, 4).map(videoTile).join("") || empty("No video request yet. Paid clients send footage links from their portal and they show up here.")}</div>${d.pVideos.length > 4 ? dB("pvideos", "", `Show all ${d.pVideos.length}`, "more") : ""}` },
 { id: "pnotes", grid: 2, title: "Portal: change requests", focus: ["pnotes", ""], render: d => `${head("Change requests", dB("pnotes", "", sum(d.pNotes, g => g.notes.length), `chip ${d.pNotes.length ? "r" : ""}`, "Open every change request"), true)}<div class="stack">${d.pNotes.slice(0, 3).map(noteTile).join("") || empty("No open change request.")}</div>${d.pNotes.length > 3 ? dB("pnotes", "", `Show all ${d.pNotes.length}`, "more") : ""}` },
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
-];
+].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "pipeline", "funnel", "search", "export"],
-  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "away", "pipeline", "funnel"],
+  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -784,14 +777,6 @@ function renderAll(fromData) {
   });
   updateHero(D); paintStatus(); syncChrome(); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); refreshDrill();
   $("#zone-sub").textContent = D.pOpen ? `${D.pOpen} open request${D.pOpen === 1 ? "" : "s"} · what you do here shows in the client's portal at once` : "What you do here shows in the client's portal at once.";
-}
-function renderSearch() {
-  const box = $("#res"); if (!box || !RAW) return;
-  const q = STATE.q.trim().toLowerCase();
-  if (!q) { box.innerHTML = ""; return; }
-  const hits = RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => (v || "").toLowerCase().includes(q))).slice(0, 6);
-  STATE.sel = clamp(STATE.sel, 0, Math.max(0, hits.length - 1));
-  box.innerHTML = hits.map((p, i) => `<button type="button" role="option" aria-selected="${i === STATE.sel}" class="${i === STATE.sel ? "sel" : ""}" data-act="lead" data-email="${esc(p.email)}"><span>${esc(p.name || p.email)} <span class="mut">· ${esc(cut(p.show || p.email, 26))}</span></span><span>${esc(MOOD_LABEL[mood(p)])}</span></button>`).join("") || empty(`No lead matches “${esc(cut(STATE.q, 30))}”.`);
 }
 function paintStatus() {
   const t = $("#stat-t"); if (!t || !D) return;
@@ -995,7 +980,7 @@ async function openLead(email, opener, keepNav) {
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
   const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
-  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button><a class="act" href="mailto:${encodeURIComponent(email).replace(/%40/g, "@")}">${ic("mail")}Write email</a>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
+  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}<div id="dr-tf"></div></div>
     ${p ? `<div class="dr-sec"><div class="dr-chips">${st ? stageChip(st) : ""}<span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div>${st && st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>
     ${nextSec(email, p)}
@@ -1351,7 +1336,7 @@ function palItems(q) {
   const cmds = [cmd("Refresh now", "", "refresh", () => refresh(true)), ...THEMES.map(t => cmd(`Look: ${t[1]}`, t[4] + (t[0] === lookOf()[0] ? " · on now" : ""), "sun", () => setTheme(t[0], true))), cmd(motionFull() ? "Motion: switch to Calm" : "Motion: switch to Full", "ambient motion", "bolt", () => setMotion(motionFull() ? "calm" : "full", true)), cmd("Pick a look", "all five", "sun", () => openDrill("look", "")),
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
-    cmd("Export leads CSV", "download", "down", () => { jump("export"); exportCsv(); }), cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
+    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
   const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
@@ -1368,21 +1353,6 @@ function closePal() { if (!PAL) return; const prev = PAL.prev; PAL = null; $("#p
 function palRun(i) { const x = PAL && PAL.items[i]; if (!x) return; PAL.prev = null; closePal(); try { x.run(); } catch {} }
 
 /* ---------------- export ---------------- */
-function exportCsv() {
-  const btn = $("#export"); if (!D || btn.classList.contains("busy")) return;
-  const cols = ["email", "name", "show", "owner", "status", "mood", "fu_stage", "yes_at", "delivered_at", "last_reply_at", "next_action", "next_action_at", "paid", "source", "campaign"];
-  const cell = v => { let s = String(v ?? "").replace(/\r?\n/g, " "); if (/^[=+\-@\t]/.test(s)) s = "'" + s; return /[",]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  const rows = D.pipe.map(p => cols.map(c => cell(c === "mood" ? MOOD_LABEL[mood(p)] : p[c])).join(","));
-  const csv = "﻿" + cols.join(",") + "\n" + rows.join("\n") + "\n", label = $("#export-t"), t0 = performance.now(), dur = RM ? 1 : 900;
-  btn.classList.add("busy");
-  const tick = now => { const k = clamp((now - t0) / dur, 0, 1); btn.style.setProperty("--p", k); label.textContent = `Exporting ${Math.round(k * 100)}%`;
-    if (k < 1) return requestAnimationFrame(tick);
-    const a = document.createElement("a"), url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    a.href = url; a.download = `beju-leads-${STATE.owner.toLowerCase()}-${D.t}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-    btn.classList.replace("busy", "done"); label.textContent = `Exported ${rows.length} leads`;
-    setTimeout(() => { btn.classList.remove("done"); btn.style.setProperty("--p", 0); label.innerHTML = `<svg><use href="#i-down"/></svg>Export leads CSV`; }, 2200); };
-  requestAnimationFrame(tick);
-}
 
 /* ---------------- refresh loop + realtime ---------------- */
 function offline(on) { let el = $("#offline"); if (on && !el) { el = document.createElement("div"); el.id = "offline"; el.className = "offline"; el.setAttribute("role", "status"); el.textContent = "Offline, retrying…"; document.body.appendChild(el); } else if (!on && el) el.remove(); }
@@ -1499,7 +1469,6 @@ document.addEventListener("click", ev => {
   else if (a === "ctdone") ctDone(b.dataset.id, b);
   else if (a === "look") setTheme(b.dataset.t, true);
   else if (a === "motion") setMotion(motionFull() ? "calm" : "full", true);
-  else if (a === "export") exportCsv();
   else if (a === "refresh") refresh(true).catch(() => {});
   else if (a === "signout") signOut();
   else if (a === "jump") jump(b.dataset.id);
@@ -1540,11 +1509,11 @@ document.addEventListener("focusin", ev => { const pl = ev.target.classList && e
 document.addEventListener("focusout", ev => { if (ev.target.classList && ev.target.classList.contains("plot")) ev.target.classList.remove("hov"); });
 document.addEventListener("input", ev => { if (ev.target.classList && ev.target.classList.contains("cv-q")) { const w = ev.target.closest(".cvw"), ms = w && CONVS.get(w.dataset.cv); if (ms) $(".conv", w).innerHTML = convMsgs(ms, ev.target.value); return; }
   if (ev.target.classList && ev.target.classList.contains("pg-q")) { STATE.pq[ev.target.dataset.k] = ev.target.value; const q = lc(ev.target.value); $$("#m-body [data-q]").forEach(el => { el.hidden = !!q && !el.dataset.q.includes(q); }); return; }
-  if (ev.target.id === "q") { STATE.q = ev.target.value; STATE.sel = 0; renderSearch(); } else if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
+  if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
 document.addEventListener("keydown", ev => {
   const ae = document.activeElement, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ae?.tagName || ""), L = layer();
   if ((ev.metaKey || ev.ctrlKey) && lc(ev.key) === "k") { ev.preventDefault(); if (!$("#app").hidden) PAL ? closePal() : openPal(); return; }
-  if (ev.key === "Escape") { if (PAL) return closePal(); if (ASK) return ASK.done(null); if (!$("#drawer").hidden) return closeLead(); if (!$("#veil").hidden) return closeDrill(); if (ae && ae.id === "q") { STATE.q = ae.value = ""; renderSearch(); } return; }
+  if (ev.key === "Escape") { if (PAL) return closePal(); if (ASK) return ASK.done(null); if (!$("#drawer").hidden) return closeLead(); if (!$("#veil").hidden) return closeDrill(); return; }
   if (PAL) { if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); PAL.sel = clamp(PAL.sel + (ev.key === "ArrowDown" ? 1 : -1), 0, Math.max(0, PAL.items.length - 1)); palRender(); } else if (ev.key === "Enter") { ev.preventDefault(); palRun(PAL.sel); } else if (ev.key === "Tab") ev.preventDefault(); return; }
   if (ev.key === "Tab" && L) { const f = $$('button:not([disabled]),a[href],input,select,textarea,[tabindex="0"]', L).filter(x => x.offsetParent !== null); if (!f.length) return; const first = f[0], last = f[f.length - 1];
     if (!L.contains(ae)) { ev.preventDefault(); first.focus(); } else if (ev.shiftKey && ae === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && ae === last) { ev.preventDefault(); first.focus(); } return; }
@@ -1552,14 +1521,9 @@ document.addEventListener("keydown", ev => {
       if (step) { ev.preventDefault(); P.i = ae.dataset.plot === "clock" ? (P.i + step + P.n) % P.n : clamp(P.i + step * jmp, 0, P.n - 1); P.paint(P.i); ae.classList.add("hov"); return; } if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); P.drill(P.i); return; } } }
   if (!$("#drawer").hidden && !typing && !ASK && (ev.key === "ArrowRight" || ev.key === "ArrowLeft")) { ev.preventDefault(); return navLead(ev.key === "ArrowRight" ? 1 : -1); }
   if (!typing && !L && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !$("#app").hidden) {
-    if (ev.key === "/") { ev.preventDefault(); const q = $("#q"); if (q) { q.focus(); q.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); } return; }
+    if (ev.key === "/") { ev.preventDefault(); return openPal(); }
     if (lc(ev.key) === "w") return toggleWall();
     if (lc(ev.key) === "n" && NT) { ev.preventDefault(); return openDrill("notifs", "", $("#nt-btn")); }
-  }
-  if (ae && ae.id === "q") {
-    const opts = $$("#res button");
-    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); STATE.sel = clamp(STATE.sel + (ev.key === "ArrowDown" ? 1 : -1), 0, Math.max(0, opts.length - 1)); renderSearch(); }
-    else if (ev.key === "Enter" && opts[STATE.sel]) { ev.preventDefault(); openLead(opts[STATE.sel].dataset.email, ae); }
   }
 });
 $("#dr-close").addEventListener("click", closeLead);

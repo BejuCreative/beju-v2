@@ -615,7 +615,7 @@ button.fe:hover{background:var(--panel)}
 @media (max-width:840px){.sk{grid-template-columns:repeat(2,minmax(0,1fr))}.boot{padding:16px}}
 
 /* ---------- wall mode (press W) ---------- */
-.wall .top,.wall .foot,.wall #c-search,.wall #c-export,.wall #c-theme{display:none}
+.wall .top,.wall .foot{display:none}
 .wall body{font-size:15.5px}
 .wall .app{padding-top:18px;max-width:none}
 
