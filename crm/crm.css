@@ -504,6 +504,8 @@ button.fe:hover{background:var(--panel)}
 .fe-m b{display:block;font-weight:500;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fe-m small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fe time{font-family:var(--mono);font-size:11px;color:var(--mute);flex:none;padding-top:2px}
+/* 11-21 (SIMAS: "a square that says action"): on the phone home the Activity card sits right under the $ hero (same order, later in the page), above Today and the rest */
+@media (max-width:600px){html[data-tab="home"] #grid>#c-activity{order:5}}
 @keyframes slidein{from{opacity:0;transform:translateX(-8px)}}
 
 /* ---------- heatmap ---------- */

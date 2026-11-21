@@ -578,6 +578,9 @@ const CARDS = [
 { id: "prod", title: "In production", focus: ["prod", ""], render: d => { const w = d.prod.filter(x => x.stage === "founder_check").length;
     return `${head(`In <em class="sf">production</em>`, dB("prod", "", `${d.prod.length} open`, `chip ${w ? "o" : ""}`, "Open every piece of client work: stage, who builds it, the file"), true)}<div class="stack">${d.prod.slice(0, 6).map(prodRow).join("") || empty("Nothing is in production.")}</div>
     ${d.prod.length > 6 ? dB("prod", "", `Show all ${d.prod.length}`, "more") : ""}`; } },
+/* 11-21 (SIMAS: "a square that says action"): right after the action cards on Main; on phones under the $ hero (crm.css) */
+{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
+    d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
 { id: "outreach", cls: "w2 chart-card", title: "Outreach", focus: ["days", ""], render: d => {
     const OR = d.M && d.M.periods ? d.M.periods[STATE.range + "d"] : null, OQ = OR ? d.M.periods[{ 7: "prev_7d", 30: "prev_30d" }[STATE.range]] : null, days = d.series.slice(-STATE.range), was = d.series.slice(-2 * STATE.range, -STATE.range),
       cmp = (k, pk) => dl(OR && OQ ? pctChg(OR[pk], OQ[pk]) : pctChg(sum(days, x => x[k]), sum(was, x => x[k])), `vs prior ${STATE.range} d`, { tip: `The last ${STATE.range} days against the ${STATE.range} days before` }), W = 600, H = 200, pad = 10, max = Math.max(1, ...days.map(x => Math.max(STATE.sa ? x.sent : 0, STATE.sb ? x.nw : 0)));
@@ -602,8 +605,6 @@ const CARDS = [
 { id: "hot", title: "Hot leads", focus: ["hotlist", ""], render: d => { const list = STATE.hotAll ? d.hot : d.hot.slice(0, 6);
     return `${head("Hot leads", sortB("hotSort", STATE.hotSort, { wait: "waiting on us", next: "next action", reply: "last reply" }), true)}<div class="stack">${list.map(({ p, us }) => leadBtn(p.email, `<span class="av${us ? " hot" : ""}" title="${esc(cut(p.show || "", 80))}">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email)}</b></span>`)).join("") || empty("No hot leads right now.")}</div>
     ${d.hot.length > 6 ? `<button type="button" class="more" data-act="hotall">${STATE.hotAll ? "Show fewer" : `Show all ${d.hot.length}`}</button>` : ""}`; } },
-{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
-    d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
 { id: "moods", title: "Buyer moods", render: d => `${head("Buyer moods")}
     <div class="tile row-pad"><div class="segbar">${d.moods.map(m => `<button type="button" class="${m.c}" data-act="drill" data-k="mood" data-a="${m.k}" data-v="g:${m.n}" title="${m.label}: ${m.n}" aria-label="${m.label}: ${m.n} leads. Open them."></button>`).join("")}</div>
     <div class="legend">${d.moods.map(m => dB("mood", m.k, `<i class="dot ${m.c}"></i><span>${m.label}</span><b>${m.n}</b>`, "lg")).join("") || empty("No leads.")}</div></div>` },
