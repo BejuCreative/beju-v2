@@ -4,6 +4,7 @@
 // (auth.getUser), profiles.is_admin = true, and a session that passed 2-step login (JWT aal = aal2).
 //   POST /functions/v1/slack-post   Authorization: Bearer <founder session>   body {channel: 'claude-sync'|'red-alert', text, lead_email?}
 //   -> {ok: true, ts, permalink}   or {ok: false, error}
+//   body {probe: true} -> HTTP 200 {ok: true} only when SLACK_TOKEN is set and has chat:write; else {ok: false, error}. Posts nothing.
 // "@Simas" / "@Benas" in the text become real Slack mentions. Only the two channels below can be posted to.
 // Secret: SLACK_TOKEN (needs the chat:write scope; the bot must be a member of the channel).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -43,6 +44,15 @@ Deno.serve(async (req) => {
     // 2) what to post
     let body: any;
     try { body = await req.json(); } catch { return out(400, { ok: false, error: "body must be JSON: {channel, text, lead_email?}" }); }
+    // Probe (the page asks on load whether to show "Post to Slack"): same founder checks above, posts nothing, HTTP 200.
+    if (body?.probe === true) {
+      if (!TOKEN) return out(200, { ok: false, error: "SLACK_TOKEN is not set" });
+      const t = await fetch("https://slack.com/api/auth.test", { method: "POST", headers: { Authorization: `Bearer ${TOKEN}` } });
+      const td = await t.json().catch(() => ({}));
+      if (!td.ok) return out(200, { ok: false, error: `slack token: ${td.error || t.status}` });
+      const scopes = (t.headers.get("x-oauth-scopes") ?? "").split(",").map((s) => s.trim());
+      return scopes.includes("chat:write") ? out(200, { ok: true }) : out(200, { ok: false, error: "missing chat:write" });
+    }
     const channel = String(body?.channel ?? "");
     if (!Object.hasOwn(CHANNELS, channel)) return out(400, { ok: false, error: `channel must be one of: ${Object.keys(CHANNELS).join(", ")}` });
     const text = typeof body?.text === "string" ? body.text.trim() : "";
