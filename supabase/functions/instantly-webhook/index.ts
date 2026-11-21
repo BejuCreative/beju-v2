@@ -35,7 +35,8 @@ async function ig(path: string) {
 async function refreshLead(lead: string) {
   const d = await ig(`/emails?lead=${encodeURIComponent(lead)}&limit=25`);
   const mails: any[] = (d.items || []).filter((m: any) => (m.lead || "").toLowerCase() === lead);
-  const isIn = (m: any) => (m.from_address_email || "").toLowerCase() === lead;
+  // OUT = sent from our own inbox (like ops-sync). A lead replying from another address (info@ / catch-all) still counts as IN.
+  const isIn = (m: any) => (m.from_address_email || "").toLowerCase() !== (m.eaccount || "").toLowerCase();
   const week = new Date(Date.now() - 7 * 864e5).toISOString();
   const rec = mails.filter(isIn).sort((a, b) => (b.timestamp_email || "").localeCompare(a.timestamp_email || ""));
   const lastOut = mails.filter(m => !isIn(m)).reduce((t, m) => (m.timestamp_email > t ? m.timestamp_email : t), "");
@@ -92,7 +93,8 @@ Deno.serve(async (req) => {
   try { p = await req.json(); } catch (_) { return new Response("bad json", { status: 400 }); }
   const type = String(p.event_type || p.type || "").toLowerCase();
   const lead = String(p.lead_email || p.lead || p.email || "").trim().toLowerCase();
-  const key = String(p.email_id || p.id || p.event_id || "") || await sha256(JSON.stringify(p));
+  const ref = String(p.email_id || p.id || p.event_id || ""), ts = String(p.timestamp || p.event_timestamp || "");
+  const key = await sha256(ref || ts ? `${type}|${ref}|${ts}` : JSON.stringify(p));   // one event = one row, even across event types
   const { data, error } = await sb.from("webhook_inbox")
     .insert({ source: "instantly", event_key: key, event_type: type, lead_email: lead || null, payload: p })
     .select("id").maybeSingle();
