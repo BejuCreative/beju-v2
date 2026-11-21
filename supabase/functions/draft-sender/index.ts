@@ -6,6 +6,7 @@
 //   3. replies to the lead's latest email from the draft's inbox, keeping everyone the lead copied (like send_reply.py),
 //      links clickable, then marks the draft 'sent' with the Instantly email id. The DB trigger re-checks the fingerprint.
 // One draft at a time, max 5 per run, ~3 s apart (Instantly's 20/min is shared with ops-sync).
+// It also posts new drafts to #red-alert and nudges at 1 h / 3 h + a morning list (see remind()).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -62,6 +63,45 @@ async function mark(d: any, status: string, extra: Record<string, unknown>) {
   return `#${d.id} ${status}${extra.error ? ": " + extra.error : ""}`;
 }
 
+// ---- founder alerts in #red-alert (BENAS 11-21: approvals reach founders in Slack + CRM; no answer = it waits, with
+// reminders at 1 h and 3 h, then the morning list). reminders: 0 = not posted yet, 1 = posted, 2 = 1-h nudge, 3 = 3-h nudge.
+const SLACK = Deno.env.get("SLACK_TOKEN") ?? "", RED_ALERT = "C0CHQ5LV7L4", CRM = "https://bejucreative.digital/crm/";
+const FOUNDERS = "<@U0C55SK8MN0> <@U0C528KBKKL>";
+const CAT: Record<string, string> = { big_deal: "Big deal / scope", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name (50k+)", other: "Needs a founder" };
+async function slack(text: string) {
+  if (!SLACK) throw new Error("SLACK_TOKEN not set");
+  const r = await (await fetch("https://slack.com/api/chat.postMessage", { method: "POST",
+    headers: { Authorization: `Bearer ${SLACK}`, "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({ channel: RED_ALERT, text, unfurl_links: false }) })).json();
+  if (!r.ok) throw new Error("slack " + r.error);
+}
+async function remind(): Promise<string[]> {
+  const out: string[] = [];
+  const { data } = await sb.from("drafts").select("*").in("status", ["pending", "held"]).order("created_at").limit(50);
+  const now = Date.now();
+  for (const d of data || []) {
+    const age = (now - Date.parse(d.created_at)) / 60000, head = `${CAT[d.category] || d.category} · ${d.lead_email} · from ${d.inbox}`;
+    let step = 0, text = "";
+    if (d.reminders === 0) { step = 1; text = `:red_circle: *APPROVAL NEEDED* (draft #${d.id}) ${FOUNDERS}\n${head}\n_Why:_ ${d.reason || "-"}\n\`\`\`${d.body}\`\`\`\nApprove / Edit / Hold in the CRM: ${CRM} (nothing sends until a founder approves).`; }
+    else if (d.status === "pending" && d.reminders === 1 && age >= 60) { step = 2; text = `:hourglass: Still waiting 1 h: draft #${d.id} · ${head} ${FOUNDERS}`; }
+    else if (d.status === "pending" && d.reminders === 2 && age >= 180) { step = 3; text = `:hourglass: Still waiting 3 h: draft #${d.id} · ${head} ${FOUNDERS}. It stays on the morning list until a founder answers.`; }
+    if (!step) continue;
+    try { await slack(text); await sb.from("drafts").update({ reminders: step, last_reminded_at: new Date().toISOString() }).eq("id", d.id); out.push(`#${d.id} alert ${step}`); }
+    catch (e) { out.push(`#${d.id} alert failed: ${String(e).slice(0, 80)}`); }
+  }
+  // morning list: once a day at 08:00 Vilnius, every draft still waiting
+  const vil = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Vilnius", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+  if (vil === "08:00") {
+    const waiting = (data || []).filter((d: any) => d.reminders >= 1);
+    if (waiting.length) {
+      await slack(`:sunrise: *Waiting for a founder* (${waiting.length}) ${FOUNDERS}\n` + waiting.map((d: any) =>
+        `• #${d.id} ${CAT[d.category] || d.category} · ${d.lead_email} · ${Math.round((now - Date.parse(d.created_at)) / 3600000)} h${d.status === "held" ? " · HELD" : ""}`).join("\n") + `\n${CRM}`).catch(() => {});
+      out.push(`morning list ${waiting.length}`);
+    }
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return new Response("forbidden", { status: 403 });
   const { data, error } = await sb.from("drafts").select("*").eq("status", "approved").order("decided_at").limit(5);
@@ -72,6 +112,7 @@ Deno.serve(async (req) => {
     catch (e) { done.push(await mark(d, "failed", { error: String(e).slice(0, 300) }).catch((x) => `#${d.id} mark failed: ${x}`)); }
     await sleep(3000);
   }
+  done.push(...await remind().catch((e) => [`reminders failed: ${String(e).slice(0, 100)}`]));
   await sb.from("sync_status").upsert({ name: "draft_sender", ran_at: new Date().toISOString(), ok: !done.some((x) => / failed/.test(x)),
                                          detail: (done.join(" · ") || "nothing approved to send").slice(0, 200) });
   return new Response(JSON.stringify({ ok: true, done }), { headers: { "Content-Type": "application/json" } });
