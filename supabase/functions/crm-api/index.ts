@@ -251,7 +251,73 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
     return await must(db.from("crm_events").select("id,at,kind,severity,title,body,lead_email,link,source,actor")
       .order("at", { ascending: false }).order("id", { ascending: false }).limit(limitArg(a, 30, 200)));
   },
+  // ---- orders (Benas's side, 11-21; tables in crm_orders1.sql). Per Short: delivered -> revision_requested -> revised.
+  // Delivered and revised come from the Drive files by themselves; only these facts are logged by hand.
+  async orders(a, _actor, db) {   // {client?, all?}: order progress (open orders unless all=true) + the problems list
+    const client = str(a, "client", { max: 200 });
+    let q = db.from("order_progress").select("*").order("opened_at", { ascending: false });
+    if (!a?.all) q = q.eq("status", "open");
+    if (client) q = q.ilike("client", `%${client.replace(/[%_]/g, "")}%`);
+    const [progress, problems] = await Promise.all([must<any[]>(q.limit(200)), must<any[]>(db.from("order_problems").select("*"))]);
+    return { progress, problems: client ? problems.filter((p) => String(p.client || "").toLowerCase().includes(client.toLowerCase())) : problems };
+  },
+  async order_revision(a, _actor, db) {   // {order_id | client, slot, note}: the client asked for a change on Short <slot>
+    const item = await orderItem(db, a);
+    const note = str(a, "note", { req: true, max: 1000 })!;
+    const rows = await must<any[]>(db.from("order_items").update({ revision_asked_at: new Date().toISOString(), revision_note: note, updated_at: new Date().toISOString() })
+      .eq("id", item.id).select());
+    return rows[0];
+  },
+  async order_posted(a, _actor, db) {   // {order_id | client, slot, at?: "YYYY-MM-DD HH:MM"}: Short <slot> is live on their channel
+    const item = await orderItem(db, a);
+    const at = vilnius(a, "at") ?? new Date().toISOString();
+    return (await must<any[]>(db.from("order_items").update({ posted_at: at, updated_at: new Date().toISOString() }).eq("id", item.id).select()))[0];
+  },
+  async order_set(a, actor, db) {   // FOUNDER keys only: {id, shorts_bought?, kind?, status?, note?, if_updated_at?}: fix what the data can't know
+    const id = intId(a), body: Record<string, unknown> = { updated_at: new Date().toISOString() }, ifu = ifUpdated(a);
+    if (a?.shorts_bought !== undefined) {
+      const n = Number(a.shorts_bought);
+      if (!Number.isInteger(n) || n < 0 || n > 1000) bad("shorts_bought must be a whole number 0-1000");
+      body.shorts_bought = n; body.size_source = "founder";
+    }
+    const kind = oneOf(str(a, "kind", { max: 12 }), ["pack", "monthly", "long", "custom", "referral", "legacy"], "kind");
+    const status = oneOf(str(a, "status", { max: 12 }), ["open", "complete", "paused", "refunded", "legacy", "canceled"], "status");
+    const note = str(a, "note", { max: 1000 });
+    if (kind) body.kind = kind;
+    if (status) body.status = status;
+    if (note) body.note = `${note} (${actor}, ${new Date().toISOString().slice(0, 10)})`;
+    if (Object.keys(body).length === 1) bad("give at least one of shorts_bought, kind, status, note");
+    let q = db.from("orders").update(body).eq("id", id);
+    if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+    const rows = await must<any[]>(q.select());
+    if (!rows.length) {
+      const cur = await must<any[]>(db.from("orders").select("*").eq("id", id).limit(1));
+      if (!cur.length) throw new Bad(404, "no order with that id");
+      throw new Changed(cur[0]);
+    }
+    return rows[0];
+  },
 };
+
+// The one Short a revision/posted fact is about: by order id, else the client's NEWEST order that has that Short number.
+async function orderItem(db: DB, a: any) {
+  const slot = intId(a, "slot");
+  let orderId: number | null = a?.order_id !== undefined ? intId(a, "order_id") : null;
+  if (orderId === null) {
+    const client = str(a, "client", { req: true, max: 200 })!.replace(/[%_]/g, "");
+    const cands = await must<any[]>(db.from("order_progress").select("id,client,opened_at").ilike("client", `%${client}%`).order("opened_at", { ascending: false }));
+    if (!cands.length) throw new Bad(404, `no orders for a client like "${client}"`);
+    const names = new Set(cands.map((c) => c.client));
+    if (names.size > 1) bad(`"${client}" matches several clients (${[...names].join(", ")}); pass order_id`);
+    const hit = await must<any[]>(db.from("order_items").select("order_id").in("order_id", cands.map((c) => c.id)).eq("slot", slot));
+    const order = cands.find((c) => hit.some((h) => h.order_id === c.id));
+    if (!order) throw new Bad(404, `${[...names][0]} has no delivered Short ${slot}`);
+    orderId = order.id;
+  }
+  const rows = await must<any[]>(db.from("order_items").select("*").eq("order_id", orderId).eq("slot", slot).limit(1));
+  if (!rows.length) throw new Bad(404, `order ${orderId} has no delivered Short ${slot}`);
+  return rows[0];
+}
 
 async function log(key_name: string, action: string, args: unknown, ok: boolean, status: number, error: string | null) {
   try {
