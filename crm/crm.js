@@ -888,13 +888,14 @@ const DR = {
     const dels = cl ? RAW.deliveries.filter(x => x.client_id === cl.id).sort((x, y) => String(y.delivered_at || "").localeCompare(String(x.delivered_at || ""))) : [];
     const acct = D.pClients.find(c => emails.has(lc(c.email))), leads = RAW.pipeline.filter(p => emails.has(lc(p.email)));
     const name = (cl && cl.name) || (acct && acct.name) || (pays[0] && pays[0].payer_name) || (leads[0] && leads[0].name) || email || "Client";
-    const msgs = await loadConv([...emails]), ig = cl && cl.instagram ? String(cl.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : "";
+    const [msgs, calls] = await Promise.all([loadConv([...emails]), loadCalls([...emails]).catch(() => [])]), ig = cl && cl.instagram ? String(cl.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : "";
     return { title: name, sub: [...emails].join(" · ") || "No email on file", html: `${facts([["Paid in total", usd(sum(pays, p => p.amount))], ["Payments", pays.length], ["Videos delivered", dels.length]])}
       ${grp("Conversation", emails.size > 1 ? `${emails.size} addresses merged` : "")}${convBlock(msgs, "m", emails.size ? `No email conversation synced for ${emails.size > 1 ? "these addresses" : "this address"} yet.${ig ? ` Conversation is on Instagram (${ig}).` : ""}` : `No email on file for this client, so no conversation can be matched.${ig ? ` Conversation is on Instagram (${ig}).` : ""}`)}
       ${grp("Client portal account")}${acct ? clientTile(acct) + (acct.vids.length ? `<div class="stack sp">${acct.vids.map(x => videoTile(D.pVideos.find(z => z.id === x.id) || { ...x, who: acct, open: 0 })).join("")}</div>` : "") : empty("No portal account with this email yet.")}
       ${leads.length ? grp("In the samples pipeline") + `<div class="stack">${leads.map(p => lrow(p, [p.status, p.show, p.next_action].filter(Boolean).join(" · "))).join("")}</div>` : ""}
       ${grp("Payments", usd(sum(pays, p => p.amount)))}${stackOf(pays.map(p => `<div class="tile row"><span class="it c-green"><svg><use href="#i-cash"/></svg></span><span class="row-main"><b>${esc(PACK[p.package] || p.package || "Custom payment")}</b><small>${fDT(p.paid_at)}${p.email ? " · " + esc(p.email) : ""}</small></span><span class="row-end up">+${usd(p.amount)}</span></div>`), "No payment matched to this client.")}
-      ${grp("Videos delivered", dels.length)}${stackOf(dels.slice(0, 40).map(x => `<div class="tile row"><span class="it c-orange"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title || "Video", 70))}</b><small>${x.delivered_at ? dLong(String(x.delivered_at).slice(0, 10)) : "no date"}</small></span></div>`), cl ? "No delivery indexed for this client." : "Deliveries are matched through the clients list; this email is not on it.")}${dels.length > 40 ? `<p class="sub">+${dels.length - 40} older videos.</p>` : ""}` }; },
+      ${grp("Videos delivered", dels.length)}${stackOf(dels.slice(0, 40).map(x => `<div class="tile row"><span class="it c-orange"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title || "Video", 70))}</b><small>${x.delivered_at ? dLong(String(x.delivered_at).slice(0, 10)) : "no date"}</small></span></div>`), cl ? "No delivery indexed for this client." : "Deliveries are matched through the clients list; this email is not on it.")}${dels.length > 40 ? `<p class="sub">+${dels.length - 40} older videos.</p>` : ""}
+      ${calls.length ? grp("Calls") + callsList(calls) : ""}` }; },
   owner(a) { const [o, k] = a.split("|"), F = { hot: p => (p.status || "").toUpperCase() === "HOT", samples: p => !!p.delivered_at, buyers: isBuyer }, L = { hot: "hot leads", samples: "samples delivered", buyers: "buyers", waiting: "replies waiting" };
     if (k === "waiting") { const list = RAW.attention.filter(x => x.kind === "reply" && x.owner === o); return { title: `${o}: replies waiting`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}`, html: stackOf(list.map(x => lrow({ email: x.lead_email, name: x.name || x.lead_email }, x.detail || "")), "Nobody is waiting on a reply.") }; }
     const list = RAW.pipeline.filter(p => p.owner === o && F[k](p)); return { title: `${o}: ${L[k]}`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}`, html: leadList(list) }; },
@@ -1005,17 +1006,19 @@ async function openLead(email, opener, keepNav) {
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
   const ems = [...new Set([email, p ? lc(p.email) : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || []).map(lc)].filter(Boolean))]; DR_EMS = ems; TL = { rows: null, all: false };
   try {
-    const [prom, notes, msgs, tl] = await Promise.all([
+    const [prom, notes, msgs, tl, calls] = await Promise.all([
       must(sb.from("promises").select("promise,due_at,status,owner").eq("lead_email", email).eq("status", "open").order("due_at")),
       must(sb.from("client_notes").select("kind,note,created_at").eq("lead_email", email).order("created_at", { ascending: false }).limit(5)),
       loadConv([email, p ? p.email : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || [])]),   // a buyer with several addresses: one merged conversation
       loadTl(ems),
+      loadCalls(ems).catch(() => []),
     ]);
     if (dr.dataset.email !== email) return;
     TL.rows = tl;
     $("#dr-more").outerHTML = `${tlSec()}${prom.length ? `<div class="dr-sec"><h3>Open promises</h3><div class="stack">${prom.map(x => `<div class="tile note"><small>${esc(x.owner || "")} · due ${fDT(x.due_at)}</small>${esc(cut(x.promise, 300))}</div>`).join("")}</div></div>` : ""}
       ${notes.length ? `<div class="dr-sec"><h3>Client notes</h3><div class="stack">${notes.map(x => `<div class="tile note"><small>${esc(x.kind || "note")} · ${dLabel(dayOf(x.created_at))}</small>${esc(cut(x.note, 400))}</div>`).join("")}</div></div>` : ""}
-      <div class="dr-sec"><h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}</div>`;
+      <div class="dr-sec"><h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}</div>
+      ${calls.length ? `<div class="dr-sec" id="dr-calls"><h3>Calls</h3>${callsList(calls)}</div>` : ""}`;
     if (PHONE.matches) { const bd = $("#dr-body"); bd.scrollTop = bd.scrollHeight; }
   } catch (e) { const m2 = $("#dr-more"); if (m2) m2.innerHTML = empty("Couldn't load the thread. Try again."); }
 }
@@ -1090,6 +1093,41 @@ async function logTouch(f) {
     else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const b = $('#drawer [data-act="tlog"]'); if (b) b.setAttribute("aria-expanded", "false"); drReload(email).catch(() => {}); }
   } catch (e) { err.hidden = false; err.textContent = `Couldn't save: ${cut(e && e.message || e, 140)}`; go.disabled = false; }
 }
+
+/* ---------------- 11-21 (SIMAS): call notes at the bottom of the client / lead profile, no separate tab ----------------
+   "short summaries of the call and key takeaways and next tasks that we have to do for them". A call = a cal.com booking
+   (public.calls); its notes = the touches row with call_uid = calls.uid (summary, takeaways, recording_url); its next tasks =
+   public.call_tasks (owner Simas / Benas / Both, due, done tick). Notes come in through scripts/crm.py touch(call_uid=...)
+   (crm-api touch gets the same fields later). The only write here: ticking a task (call_tasks.done_at / done_by). */
+const CALL_TITLE = /^free brand content analysis between beju creative and\s*/i;
+async function loadCalls(ems) {
+  ems = [...new Set(ems.map(lc).filter(Boolean))]; if (!ems.length) return [];
+  const calls = (await must(sb.from("calls").select("uid,name,email,title,start_at,end_at,status,organizer").in("email", ems).order("start_at", { ascending: false }))).filter(c => !/cancel/i.test(c.status || ""));
+  if (!calls.length) return [];
+  const notes = await must(sb.from("touches").select("id,call_uid,summary,takeaways,recording_url").in("call_uid", calls.map(c => c.uid)));
+  const tasks = notes.length ? await must(sb.from("call_tasks").select("id,touch_id,text,owner,due_at,done_at").in("touch_id", notes.map(n => n.id)).order("id")) : [];
+  return calls.map(c => { const n = notes.find(x => x.call_uid === c.uid) || null; return { c, n, tasks: n ? tasks.filter(t => t.touch_id === n.id) : [] }; });
+}
+const ctMeta = t => `${esc(t.owner)} · ${t.done_at ? `done ${dLabel(dayOf(t.done_at))}` : t.due_at ? `<span class="${new Date(t.due_at) < Date.now() ? "dn" : ""}">due ${dLabel(dayOf(t.due_at))}</span>` : "no date"}`;
+const callTask = t => `<li class="ctask${t.done_at ? " done" : ""}" data-owner="${esc(t.owner)}" data-due="${esc(t.due_at || "")}"><button type="button" class="ctick" data-act="ctdone" data-id="${t.id}" aria-pressed="${!!t.done_at}" aria-label="Done: ${esc(t.text)}">${ic("check")}</button><span class="ct-t">${esc(t.text)}</span><small class="ct-m">${ctMeta(t)}</small></li>`;
+const callCard = ({ c, n, tasks }) => {
+  const who = cut(String(c.title || "").replace(CALL_TITLE, "").trim() || c.name || c.email || "Call", 60), rec = n && n.recording_url ? safeUrl(n.recording_url) : "";
+  const missing = !n && +new Date(c.end_at || c.start_at) < Date.now() - 2 * 36e5;   // ended over 2 h ago, nothing written
+  return `<div class="tile ccall"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : missing ? `<p class="cc-miss">Notes missing</p>` : ""}</div>`;
+};
+const callsList = rows => rows.length ? `<div class="stack">${rows.map(callCard).join("")}</div>` : "";
+async function ctDone(id, btn) {   // tick / untick one call task
+  const li = btn.closest(".ctask"), on = btn.getAttribute("aria-pressed") !== "true";
+  btn.disabled = true;
+  try {
+    await upd("call_tasks", +id, on ? { done_at: nowIso(), done_by: founderName() } : { done_at: null, done_by: null });
+    li.classList.toggle("done", on); btn.setAttribute("aria-pressed", on);
+    $(".ct-m", li).innerHTML = ctMeta({ owner: li.dataset.owner, due_at: li.dataset.due || null, done_at: on ? nowIso() : null });
+    toast(on ? "Task done" : "Task open again", "check", "c-green");
+  } catch (e) { toast("Couldn't save the tick", "alert", "c-red", cut(e && e.message || e, 120)); }
+  btn.disabled = false;
+}
+window.BEJU_CRM_CALLS = async ems => callsList(await loadCalls(ems || []));   // side.js: the same section on the Clients page
 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
@@ -1458,6 +1496,7 @@ document.addEventListener("click", ev => {
   else if (a === "hotall") { STATE.hotAll = !STATE.hotAll; renderAll(); }
   else if (a === "todayall") { STATE.todayAll = !STATE.todayAll; renderAll(); }
   else if (a === "ftdone") ftDone(b.dataset.id, b);
+  else if (a === "ctdone") ctDone(b.dataset.id, b);
   else if (a === "look") setTheme(b.dataset.t, true);
   else if (a === "motion") setMotion(motionFull() ? "calm" : "full", true);
   else if (a === "export") exportCsv();
