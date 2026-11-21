@@ -102,7 +102,7 @@ function feedX() {
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -132,6 +132,7 @@ async function fetchAll() {
     feedX(),   // 11-21: CRM changes, calls and to-dos for the Activity feed
     all("big_deals", "*").catch(() => null),   // 11-21 (BENAS, main page): open deals worth $300+/mo, stale first, then value (PR #12)
     all("drafts_waiting", "*").catch(() => null),   // 11-21 (BENAS): lane-3 drafts for a founder (PR #9). Not live yet = null = the card hides
+    all("reply_dismissals", "lead_email,received_at").catch(() => []),   // 11-21: "no reply needed" marks (Do next; needs_attention misses one stamped to the minute)
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -139,7 +140,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss };
 }
 
 /* ---------------- derive ---------------- */
@@ -166,6 +167,16 @@ const PACK = { monthly_30_300: "30 Shorts a month", short_5: "5 Shorts", short_3
 const PER = { today: ["Today", 1], "7d": ["Last 7 days", 7], "30d": ["Last 30 days", 30], month: ["This month", 0] };
 const nameOf = e => { const p = RAW && RAW.pipeline.find(x => lc(x.email) === lc(e)); return p && p.name ? p.name : e; };
 const payKey = p => p.client_id ? "c:" + p.client_id : p.email ? "e:" + lc(p.email) : "p:" + p.id;
+/* 11-21 (Do next noise): which waiting replies are real work. HARD_PASS = the send guard's _HARD_PASS (scripts/instantly.py) + "stop" /
+   "unsubscribe" alone. AUTO_TX / YES_TX / HUMAN_TX = the reply sync's classifier (supabase/functions/ops-sync). AUTO_MORE = auto-replies it
+   still files as REAL (11-21 data: "received your message", "landed safe", "my working hours", "only check this email", "thanks for writing in"). */
+const HARD_PASS = /\b(?:going to|gonna|will|'ll|have to|must|i|we)\s+pass\b(?!\s+(?:this|it|that|them|your|you|the|along|on to|on your|on the))|\bpass(?:ing)? on (?:this|it|that|the offer|your offer)\b|\bno,?\s+thanks?\b|\bno thank you\b|\bnot interested\b|\bnot for (?:us|me)\b|\bplease (?:don'?t|do not) (?:follow up|contact|email|reach out|send)|^\W*(?:stop|unsubscribe|remove me)\b/i;
+const AUTO_TX = /out of (the )?office|\bOOO\b|on (vacation|holiday|leave|maternity)|auto(matic)?[- ]?reply|thank(s| you)( so much| very much)? for (your (email|message|e-mail|inquiry|enquiry|note)|reaching|getting|emailing|contacting)|your (message|email) has been (received|forwarded)|you will receive a (response|reply)|vielen dank f|(reply|respond|get back)[^.]{0,40}(upon|on|after) my return|away at a conference|reply above this line|your request (\(#?\d+\) )?has been received|we strive to respond within|limited access to (my )?e-?mails?|for (the )?fastest (assistance|response)|we (aim to )?(respond|reply) to (all )?e-?mails? within|in the meantime, here are|view (this email )?in (your )?browser|unsubscribe/i;
+const HUMAN_TX = /sorry for the (late|delayed|slow) (reply|response)|\bi was (out|away|travell?ing)\b|\b(adding|looping in|cc'?ing|copying in)\b|\bi'?ve (now )?(reviewed|watched|looked)|\b(aren'?t|are not|am not|i'?m not|not) (currently )?(looking for|interested)|\bno,? thank(s| you)\b|\b(just|i'?ve|we'?ve|i|we) (just )?paid\b|looking forward to working (together|with)/i;
+const YES_TX = /\b(yes|yeah|sure|interested|go ahead|send it|please do|sounds good|let'?s do|i'?d (like|love|be happy)|take you up on)\b/i;
+const AUTO_MORE = /\b(we('ve)?|i('ve)?|team has) received your (message|e-?mail|inquiry|enquiry|note)\b|\b(has|have) landed (safe|safely)\b|\bmy working hours\b|\bonly check (this|my) (e-?mail|inbox)\b|\bthanks? (so much )?for writing in\b|\byour (request|ticket)\b[^.]{0,30}\bhas been received\b/i;
+const ownWords = t => String(t || "").split(/\bFrom: |\bOn .{5,120}?wrote:|-----Original Message-----|\bSent from my\b/)[0];   // the lead's own words, not the quoted thread
+const autoText = w => /\bautomated (e-?mail |email )?(response|reply|message)\b/i.test(w) || ((AUTO_TX.test(w) || AUTO_MORE.test(w)) && !YES_TX.test(w) && !HUMAN_TX.test(w));
 
 function derive() {
   const R = RAW, t = today(), own = r => STATE.owner === "All" || (r.owner || "") === STATE.owner, ownLoose = r => STATE.owner === "All" || !r.owner || r.owner === STATE.owner;
@@ -496,8 +507,11 @@ function derive() {
   const todoC = [], age = x => x ? rel(+new Date(x)) : "", ms = x => x ? +new Date(x) : 0, dueT = x => { const u = dueIn(x); return u ? u.txt : ""; };
   const c0 = (r, at, key, x) => { if (key && !/^t:/.test(key) && gone.has(key)) return; todoC.push({ ...x, r, at, key }); };
   (d.drafts || []).forEach(x => c0(1, ms(x.created_at), lc(x.lead_email), { icon: "check", c: "c-purple", title: `Approve the reply to ${nm(x.lead_email)}`, sub: `${DRAFT_L[x.category] || words(x.category)}${x.status === "pending" ? "" : " · " + x.status}`, end: age(x.created_at), k: "draft", a: String(x.id) }));
-  (att.reply || []).forEach(x => c0(2, ms(x.due), lc(x.email), { icon: "mail", c: "c-blue", title: `Reply to ${nm(x.email)}`, sub: x.detail || "A reply is waiting", end: age(x.due), email: x.email }));
-  d.hot.filter(h => h.us).forEach(h => c0(2, h.lr || 0, lc(h.p.email), { icon: "mail", c: "c-red", title: `Reply to ${h.p.name || nm(h.p.email)}`, sub: `Hot lead waiting on us · ${h.tag[0]}`, end: h.lr ? age(h.lr) : "", email: h.p.email }));
+  const outAt = {}; R.tlite.forEach(m => { if (m.direction === "out") { const k = lc(m.lead_email), x = ms(m.at); if (!(outAt[k] >= x)) outAt[k] = x; } });
+  const hotBy = Object.fromEntries(d.hot.map(h => [lc(h.p.email), h]));
+  const dsm = {}; (R.dismiss || []).forEach(x => { const k = lc(x.lead_email), v = ms(x.received_at); if (!(dsm[k] >= v)) dsm[k] = v; });   // a mark covers its reply even when stamped to the minute
+  (att.reply || []).filter(x => { const w = ownWords(x.detail), at = ms(x.due), k = lc(x.email); return !(outAt[k] > at) && !(dsm[k] >= at - 6e4) && !HARD_PASS.test(w) && !autoText(w); })
+    .forEach(x => { const h = hotBy[lc(x.email)]; c0(2, ms(x.due), lc(x.email), { icon: "mail", c: h ? "c-red" : "c-blue", title: `Reply to ${nm(x.email)}`, sub: `${h ? `Hot lead, ${h.tag[0]} · ` : ""}${x.detail || "A reply is waiting"}`, end: age(x.due), email: x.email }); });
   d.callsUp.filter(x => dayOf(x.start_at) === t).forEach(x => c0(3, ms(x.start_at), x.email ? lc(x.email) : "cal:" + x.uid, { icon: "phone", c: "c-blue", title: `Call ${x.name || x.email}`, sub: `Today ${timeOf(x.start_at)} · booked on cal.com`, end: timeOf(x.start_at), email: x.email || "", k: "todaylist", a: "" }));
   (R.ftasks || []).filter(x => STATE.owner === "All" || !x.who || x.who === STATE.owner).forEach(x => c0(4, ms(x.due_at || x.created_at), "t:" + x.id, { icon: "flag", c: "c-red", title: x.title, sub: [x.who || "Either of you", dueT(x.due_at), x.detail || ""].filter(Boolean).join(" · "), task: x.id, lead: lc(x.lead_email || ""), email: x.lead_email || "" }));
   (att.paid_waiting || []).forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", end: age(x.due), email: x.email }));
@@ -507,9 +521,12 @@ function derive() {
   (att.overdue || []).forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "alert", c: "c-orange", title: `Next step overdue: ${nm(x.email)}`, sub: x.detail || "", end: dueT(x.due), email: x.email }));
   [...d.fuOver, ...d.fuDays[0].list].forEach(f => c0(5, ms(f.due_at), lc(f.email), { icon: "clock", c: "c-grey", title: `Follow up with ${f.name || nm(f.email)}`, sub: `touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · ${f.day < t ? "overdue" : "due today"}`, end: f.day < t ? dLabel(f.day) : "today", email: f.email }));
   const hasNext = new Set((R.nextSteps || []).filter(x => String(x.next_step || "").trim()).map(x => lc(x.email)));
-  d.hot.filter(h => !String(h.p.next_action || "").trim() && !hasNext.has(lc(h.p.email))).forEach(h => c0(6, -(h.lr || 0), lc(h.p.email), { icon: "bolt", c: "c-orange", title: `Hot lead: ${h.p.name || nm(h.p.email)}`, sub: `No next step set · ${h.tag[0]}`, end: h.lr ? age(h.lr) : "", email: h.p.email }));
-  const seenT = new Set(); d.todo = [];
-  todoC.sort((x, y) => x.r - y.r || x.at - y.at).forEach(x => { if (x.task) { d.todo.push(x); if (x.lead) seenT.add(x.lead); return; } if (seenT.has(x.key)) return; seenT.add(x.key); d.todo.push(x); });
+  const valOf = {}; (R.stages || []).forEach(x => { valOf[lc(x.email)] = Math.max(+x.deal_value_usd || 0, +x.opp_value || 0); }); (R.deals || []).forEach(x => { const k = lc(x.email); valOf[k] = Math.max(valOf[k] || 0, +x.value_usd || 0); });
+  d.hot.filter(h => !String(h.p.next_action || "").trim() && !hasNext.has(lc(h.p.email))).sort((a, b) => (valOf[lc(b.p.email)] || 0) - (valOf[lc(a.p.email)] || 0) || (b.lr || 0) - (a.lr || 0))
+    .forEach((h, i) => { const v = valOf[lc(h.p.email)] || 0; c0(6, i, lc(h.p.email), { icon: "bolt", c: "c-orange", title: `Hot lead: ${h.p.name || nm(h.p.email)}`, sub: `No next step set · ${h.tag[0]}${v ? ` · worth ${usd(v)}` : ""}`, end: h.lr ? age(h.lr) : "", email: h.p.email }); });
+  const seenT = new Set(); d.todo = []; d.todoMore = [];
+  todoC.sort((x, y) => x.r - y.r || x.at - y.at).forEach(x => { if (x.task) { d.todo.push(x); if (x.lead) seenT.add(x.lead); return; } if (seenT.has(x.key)) return; seenT.add(x.key);
+    (x.r === 6 && d.todo.filter(y => y.r === 6).length >= 8 ? d.todoMore : d.todo).push(x); });
   d.todoN = d.todo.length;
   /* 11-21 Pipeline card: pipeline_forecast for everyone; with the owner switch on, the same sums from lead_stage */
   { const F = (R.forecast || []).filter(x => x.is_open).sort((a, b) => a.ord - b.ord), L = (R.stages || []).filter(x => x.is_open && STATE.owner !== "All" && own(x));
@@ -675,7 +692,7 @@ const CARDS = [
     return `${head(`Waiting for <em class="sf">approval</em>`, dB("approvals", "", `${A.length} waiting`, "chip o", "Open every draft that waits for a founder"), true)}<div class="stack">${A.slice(0, 5).map(draftRow).join("")}</div>
     ${A.length > 5 ? dB("approvals", "", `Show all ${A.length}`, "more") : ""}`; } },
 { id: "next", title: "Do next", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, dB("next", "", d.todoN ? `${d.todoN} to do` : "all clear", `chip ${d.todoN ? "o" : "g"}`, "Open the whole list, most urgent first"), true)}<div class="stack">${d.todo.slice(0, 8).map((x, i) => nextRow(x, i)).join("") || empty("Nothing needs you right now.")}</div>
-    ${d.todoN > 8 ? dB("next", "", `Show all ${d.todoN}`, "more") : ""}` },
+    ${d.todoN > 8 || d.todoMore.length ? dB("next", "", "Show all", "more") : ""}` },
 /* 11-21 (SIMAS: "a square that says action"; BENAS: lower on the main page, under Do next) */
 { id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.filter(e => !e.quiet).slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
     d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
@@ -1029,7 +1046,8 @@ const DR = {
   todaylist() { const I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"] };
     return { title: `Today, ${dLong(D.t)}`, sub: `${D.todayItems.length} items`, html: stackOf(D.todayItems.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"], inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 90))}</b><small>${esc(cut(x.detail || x.kind, 160))}</small></span>${x.at ? `<span class="row-end"><small>${timeOf(x.at)}</small></span>` : ""}`; return x.lead_email ? leadBtn(x.lead_email, inner) : dB("item", x.id, inner, "tile row"); }), "Nothing on the list for today.") }; },
   next() { const G = ["", "Approvals", "Replies waiting", "Calls today", "Due: deliveries, promises, to-dos", "Follow-ups due", "Hot leads with no next step"];   // one ranked list, labelled by reason
-    return { title: "Do next", sub: `${D.todoN} thing${D.todoN === 1 ? "" : "s"}, most urgent first · one row per lead`, html: D.todo.length ? G.map((g, r) => { const xs = D.todo.map((x, i) => [x, i]).filter(([x]) => x.r === r); return xs.length ? grp(g, xs.length) + `<div class="stack">${xs.map(([x, i]) => nextRow(x, i, true)).join("")}</div>` : ""; }).join("") : empty("Nothing needs you right now.") }; },
+    return { title: "Do next", sub: `${D.todoN} to do, most urgent first · one row per lead`, html: (D.todo.length ? G.map((g, r) => { const xs = D.todo.map((x, i) => [x, i]).filter(([x]) => x.r === r); return xs.length ? grp(g, xs.length) + `<div class="stack">${xs.map(([x, i]) => nextRow(x, i, true)).join("")}</div>` : ""; }).join("") : empty("Nothing needs you right now."))
+      + (D.todoMore.length ? grp("More hot leads with no next step", D.todoMore.length) + `<div class="stack">${D.todoMore.map(x => nextRow({ ...x, end: "" }, 0, false)).join("")}</div>` : "") }; },   // the 8 most valuable are in the list; the rest wait here, not counted
   deals() { const B = D.deals || []; return { title: "Big deals", sub: `${B.length} open deal${B.length === 1 ? "" : "s"} worth $300+ a month · ${B.filter(x => x.stale).length} quiet past their stage's limit · those first, then by value`, html: stackOf(B.map(dealTile), D.deals ? "No open deal worth $300+ a month." : "The big-deals list isn't there yet.") }; },
   approvals() { const A = D.drafts || []; return { title: "Waiting for approval", sub: `${A.length} draft${A.length === 1 ? "" : "s"} wait for a founder · oldest first`, html: stackOf(A.map(draftRow), "No draft is waiting for you.") }; },
   draft(id) { return draftSheet(id); },
