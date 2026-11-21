@@ -1458,7 +1458,7 @@ function palItems(q) {
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
     cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
-    ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
+    ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")), cmd("Contacts", "everyone we talk to, one row per person", "users", () => goPage("contacts")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
   const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none") && !(!PHONE.matches && STATS_TAB_ONLY.has(c.id))).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
