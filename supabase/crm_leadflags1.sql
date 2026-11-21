@@ -68,7 +68,10 @@ where now() >= d.due_at and d.due_at > now() - interval '7 days'
   and coalesce(ls.stage, '') not in ('won', 'lost', 'parked')
   and f.lost_reason is null
   and (f.snoozed_until is null or f.snoozed_until <= now())
-  and not exists (select 1 from public.desk_items h where h.kind = 'hold' and h.status = 'open' and d.e = any(h.emails));
+  and not exists (select 1 from public.desk_items h where h.kind = 'hold' and h.status = 'open' and d.e = any(h.emails))
+  -- one source per lead (review 19:57): leads in the sample follow-up cadence (fu_state active) get their reminders
+  -- from that cadence (crm.due / the 13:30 FOLLOW-UPS DUE alert), not from here
+  and not exists (select 1 from public.fu_state s where lower(s.email) = d.e and s.state = 'active');
 revoke all on public.offer_followups_due from anon, authenticated;
 grant select on public.offer_followups_due to authenticated;
 
