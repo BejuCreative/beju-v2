@@ -201,13 +201,17 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 .nav{position:sticky;top:0;z-index:20;background:#fff;padding-top:12px}
 .nav .wrap{padding-bottom:12px}
 .navbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
-section[id],header .toc{scroll-margin-top:84px}
+section[id],header .toc,.evid li{scroll-margin-top:84px}
+.nav .sh{display:none}
 @media (max-width:760px){
-  .nav .wrap{flex-wrap:wrap;gap:8px}
-  .navbtns{width:100%;justify-content:flex-start;gap:6px}
-  .navbtns .btn.sm{height:38px;padding:0 12px;font-size:14px}
+  .nav{padding-top:8px}
+  .nav .wrap{flex-wrap:nowrap;gap:8px;padding-bottom:8px}
+  .navbtns{flex:1;justify-content:flex-end;gap:6px;flex-wrap:nowrap}
+  .navbtns .btn.sm{height:44px;padding:0 14px;font-size:15px}
   .navbtns .site-btn{display:none!important}
-  section[id]{scroll-margin-top:118px}
+  .nav .lg{display:none}.nav .sh{display:inline}
+  .brand{min-height:44px}
+  section[id],header .toc,.evid li,#promise{scroll-margin-top:76px}
 }
 .band{background:var(--soft)}
 .head{max-width:44em}
@@ -239,6 +243,7 @@ section[id],header .toc{scroll-margin-top:84px}
 .nexts{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .nexts div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:22px 24px}
 .nexts b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.nexts .nx{margin-top:8px;font-size:16px;color:var(--muted)}
 .nexts ul{margin:10px 0 0;padding-left:20px;display:grid;gap:7px;font-size:17px;color:var(--body);line-height:1.5}
 
 /* plain data tables (what we found, terms, roadmap) */
@@ -346,7 +351,7 @@ section[id],header .toc{scroll-margin-top:84px}
 .dmex{margin-top:16px;display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;max-width:44em}
 .dmex img{width:260px;height:auto;border-radius:22px;border:1px solid var(--hair);display:block}
 .dmex p{font-size:16.5px;color:var(--body);line-height:1.55}
-@media (max-width:900px){.plans2{grid-template-columns:1fr}.dmex{grid-template-columns:1fr;justify-items:start}}
+@media (max-width:900px){.plans2{grid-template-columns:minmax(0,1fr)}.dmex{grid-template-columns:1fr;justify-items:start}}
 @media print{.plans2{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)!important}.pl{padding:16px;break-inside:avoid}.pl .pr{font-size:26pt}.pl .btn{display:none!important}.evid{break-inside:auto}.dmex{grid-template-columns:120px 1fr!important;gap:14px}.dmex img{width:120px;border-radius:12px}}
 
 /* guarantee: a light document box, no dark band */
@@ -425,6 +430,45 @@ section[id],header .toc{scroll-margin-top:84px}
   .path .st::before{left:21px;top:44px}
 }
 
+/* ---------- phone ---------- */
+html,body{overflow-x:clip}   /* 'hidden' on both turns body into a scroll box and the sticky top bar stops sticking */
+@media screen and (max-width:760px){
+  .btn:not(.sm){white-space:normal;height:auto;min-height:56px;padding:13px 22px;text-align:center;line-height:1.3}
+  details{padding:8px 0}
+  summary{min-height:48px;align-items:center;padding:6px 0}
+  .evid summary{padding:6px 0}
+  .pl{padding:22px 20px;min-width:0}
+  .pl .pr{font-size:46px}
+  .pl .btn{justify-self:stretch}
+  .guar{padding:24px 20px}
+  .nexts div{padding:20px}
+  .dmex img{width:min(260px,100%)}
+  /* the plan table becomes one card per row: no sideways scrolling */
+  .cmpwrap{overflow:visible;border:0;background:none;border-radius:0;margin-top:22px}
+  .cmp{display:block;min-width:0}
+  .cmp thead{display:none}
+  .cmp tbody{display:grid;gap:12px}
+  .cmp tr{display:block;background:#fff;border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+  .cmp tr.grp{background:none;border:0;border-radius:0;margin-top:14px}
+  .cmp tr.grp th{display:block;background:none;padding:0 4px}
+  .cmp tbody th,.cmp td{display:block;width:auto;border-bottom:0}
+  .cmp tbody th{padding:18px 18px 14px}
+  .cmp tbody th span{font-size:16px}
+  .cmp td{padding:12px 18px;border-top:1px solid var(--hair)}
+  .cmp td::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .cmp td.yes::before{color:var(--gold-text)}
+  .cmp td.val:empty{display:none}
+  .cmp td.val a{display:flex;align-items:center;min-height:44px;padding:0;margin-top:2px;font-size:15px}
+  .pl .mini b{font-size:13px}
+  .cmp tr.tot{border:2px solid var(--ink)}
+  .cmp tr.tot th,.cmp tr.tot td{border-top:0;padding-top:16px;padding-bottom:16px}
+  .cmp tr.tot td{border-top:1px solid var(--hair)}
+  /* stacked tables get their column names back as small labels */
+  .tb td[data-l]::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+  .tb td[data-l]{padding-top:12px}
+  .tb tr:last-child td[data-l]:not(:last-child){border-bottom:1px solid var(--hair)}
+}
+
 /* PDF: Chrome prints at about 680 px wide, so the phone rules above would apply. Force the desktop grids back. */
 @media print{
   @page{size:A4;margin:14mm 12mm 18mm;
@@ -482,8 +526,8 @@ section[id],header .toc{scroll-margin-top:84px}
   <div class="wrap">
     <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
     <div class="navbtns noprint">
-      <a class="btn ghost sm" href="#plan">See the plans</a>
-      <a class="btn ghost sm" href="Dr-Judy-Scope-BEJU-Creative.pdf" download>Download PDF</a>
+      <a class="btn ghost sm" href="#plan"><span class="lg">See the plans</span><span class="sh">Plans</span></a>
+      <a class="btn ghost sm" href="Dr-Judy-Scope-BEJU-Creative.pdf" download><span class="lg">Download PDF</span><span class="sh">PDF</span></a>
       <a class="btn ghost sm site-btn" href="https://bejucreative.digital/">Visit our website</a>
       <a class="btn primary sm" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
     </div>
@@ -544,7 +588,7 @@ section[id],header .toc{scroll-margin-top:84px}
     <h3 class="subh">Next steps</h3>
     <div class="nexts">
       <div><b>BEJÚ Creative</b><ul><li>Redo the four videos in the new look.</li><li>Make new clips from your studio interview and your welcome video.</li><li>Put everything in writing, with prices. This page is that.</li><li>Book a handover call with Joriz, to learn how your social accounts are set up.</li></ul></div>
-      <div><b>Dr. Judy</b><ul><li>Read this scope.</li><li>Retake the Gift House photo when your carpet arrives.</li></ul></div>
+      <div><b>Dr. Judy</b><p class="nx">Small steps. Each one helps us start on day one.</p><ul><li>Read this scope and pick your plan.</li><li>Watch the first redone video, and tell us if the new look is right.</li><li>Send us the link to your new talk, “Why We Love People Who Keep Hurting Us”.</li><li>Choose the word people comment to get your free chapter. Our idea: HEAL.</li><li>Tell us two or three time windows a week for your free consultations.</li><li>Tell your assistant that we will call her for a short handover.</li><li>Send us the cover and the launch date of your new book.</li><li>Retake the Gift House photo when your carpet arrives.</li></ul></div>
     </div>
   </div>
 </section>
@@ -556,12 +600,12 @@ section[id],header .toc{scroll-margin-top:84px}
     <table class="tb three">
       <thead><tr><th>What we found</th><th>What it costs you</th><th>What we do</th></tr></thead>
       <tbody>
-        <tr><th scope="row">The Shorts we made aren't on your pages yet</th><td>Videos that sit in a folder reach no one.</td><td>We post every day for you, on all four channels.</td></tr>
-        <tr><th scope="row">Your free chapter downloads without an email address</th><td>People read it and leave, and you never learn who they were.</td><td>The chapter asks for an email address first, so every download adds a person to your list.</td></tr>
-        <tr><th scope="row">The “2-Minute Quiz” button leads to a missing page</th><td>A visitor who was curious enough to click meets an error.</td><td>We point the button at a working quiz, or remove it until the quiz is ready.</td></tr>
-        <tr><th scope="row">The Healing Childhood Wounds site carries the other site's title</th><td>Google reads it as a copy of your narcissistic-abuse site, so it is hard to find.</td><td>We give it its own title and tell Google it is its own site.</td></tr>
-        <tr><th scope="row">A free consultation ends in “we'll call you”</th><td>Someone has to call each person back, and you told us you can't manage that.</td><td>A calendar where people book a time themselves, in the hours you open.</td></tr>
-        <tr><th scope="row">Healing Childhood Wounds is sold in three places, at $395, $395 and $397</th><td>Two prices for one program make buyers hesitate.</td><td>One page and one price, and every link points to it.</td></tr>
+        <tr><th scope="row">The Shorts we made aren't on your pages yet</th><td data-l="What it costs you">Videos that sit in a folder reach no one.</td><td data-l="What we do">We post every day for you, on all four channels.</td></tr>
+        <tr><th scope="row">Your free chapter downloads without an email address</th><td data-l="What it costs you">People read it and leave, and you never learn who they were.</td><td data-l="What we do">The chapter asks for an email address first, so every download adds a person to your list.</td></tr>
+        <tr><th scope="row">The “2-Minute Quiz” button leads to a missing page</th><td data-l="What it costs you">A visitor who was curious enough to click meets an error.</td><td data-l="What we do">We point the button at a working quiz, or remove it until the quiz is ready.</td></tr>
+        <tr><th scope="row">The Healing Childhood Wounds site carries the other site's title</th><td data-l="What it costs you">Google reads it as a copy of your narcissistic-abuse site, so it is hard to find.</td><td data-l="What we do">We give it its own title and tell Google it is its own site.</td></tr>
+        <tr><th scope="row">A free consultation ends in “we'll call you”</th><td data-l="What it costs you">Someone has to call each person back, and you told us you can't manage that.</td><td data-l="What we do">A calendar where people book a time themselves, in the hours you open.</td></tr>
+        <tr><th scope="row">Healing Childhood Wounds is sold in three places, at $395, $395 and $397</th><td data-l="What it costs you">Two prices for one program make buyers hesitate.</td><td data-l="What we do">One page and one price, and every link points to it.</td></tr>
       </tbody>
     </table>
   </div>
@@ -573,7 +617,7 @@ section[id],header .toc{scroll-margin-top:84px}
       <p class="lede">Here is the whole path, with one of your own videos as the example.</p></div>
     <div class="path">
       <div class="st"><span class="n">1</span><div><h3>Someone sees your video</h3><p>A Short opens on your question in yellow: “Why do we love people who keep hurting us?” They stop scrolling to hear the answer.</p></div></div>
-      <div class="st"><span class="n">2</span><div><h3>They comment one word</h3><p>The video says: comment HEAL for the free chapter. They comment. Within seconds, your page sends them a private message. The chapter is for your followers, so the message asks them to follow you first.</p><div class="dmex"><img src="dm-example.jpg" alt="Example of an automatic Instagram message with a free guide and a button" width="260"><p><b style="color:var(--ink)">An example from another creator's page.</b> The message is a card with the free gift and one button. A friendly follow-up comes after it, here an invitation to a free class. Yours gets your own words, your free chapter and your look. We tailor every line with you.</p></div></div></div>
+      <div class="st"><span class="n">2</span><div><h3>They comment one word</h3><p>The video says: comment HEAL for the free chapter. They comment. Within seconds, your page sends them a private message. The chapter is for your followers, so the message asks them to follow you first.</p><div class="dmex"><img src="dm-example.jpg" alt="Example of an automatic Instagram message with a free guide and a button" width="260" height="466" loading="lazy" decoding="async"><p><b style="color:var(--ink)">An example from another creator's page.</b> The message is a card with the free gift and one button. A friendly follow-up comes after it, here an invitation to a free class. Yours gets your own words, your free chapter and your look. We tailor every line with you.</p></div></div></div>
       <div class="st"><span class="n">3</span><div><h3>They follow you and join your list</h3><p>They follow you and type their email address, and the chapter arrives. You gain a follower, and their address is in a list that belongs to you.</p></div></div>
       <div class="st"><span class="n">4</span><div><h3>Your emails stay with them</h3><p>Over two weeks they get five short emails in your voice. After that, one short email a week.</p></div></div>
       <div class="st"><span class="n">5</span><div><h3>They take the next step</h3><p>They buy Healing Narcissistic Wounds or Healing Childhood Wounds. Or they book a free consultation, at a time you opened. The same path runs for your practice and for The Gift House, each with its own gift.</p></div></div>
@@ -595,39 +639,39 @@ section[id],header .toc{scroll-margin-top:84px}
         <p class="pr">$2,500 <small>a month</small></p>
         <p class="sub">Everything, run for you as one team: your videos, your four funnels, your emails, your sites, your book launch. Tool costs are covered by us.</p>
         <p class="mini"><b>30-day promise</b>No program sale in your first 30 days? You choose: one more month free, or your first month back.</p>
-        <a class="btn primary noprint" href="https://buy.stripe.com/14AaEX0QydZ2flQgv85EY1a?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start this plan · $2,500 a month</a>
+        <a class="btn primary noprint" href="https://buy.stripe.com/14AaEX0QydZ2flQgv85EY1a?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start this plan · $2,500&nbsp;a&nbsp;month</a>
       </div>
       <div class="pl quiet">
         <span class="pill">Small start</span>
         <h3>Lead Magnet Test</h3>
         <p class="pr">$600 <small>a month</small></p>
         <p class="sub">One lead magnet funnel and daily posting, next to your $300 Shorts plan.</p>
-        <a class="btn ghost noprint" href="https://buy.stripe.com/9B614nbvc5sw2z4ceS5EY1b?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start the test · $600 a month</a>
+        <a class="btn ghost noprint" href="https://buy.stripe.com/9B614nbvc5sw2z4ceS5EY1b?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start the test · $600&nbsp;a&nbsp;month</a>
       </div>
     </div>
     <div class="cmpwrap"><table class="cmp">
       <thead><tr><th>What you get</th><th class="main">Sales Engine: Full Business</th><th>Lead Magnet Test</th><th>What others charge for that piece alone</th></tr></thead>
       <tbody>
         <tr class="grp"><th colspan="4">Your videos</th></tr>
-        <tr><th scope="row"><b>1. New videos every day</b><span>We make two or three new Shorts for you every day, from your long videos. Each one has a yellow question first, your WTFreud! lettering and your end card.</span></th><td class="yes"><span class="ok"><span>60–90 a month, more when needed</span></span></td><td class="q2">Your 30 a month continue, on your current $300 plan</td><td class="val"><b>ShortVids, Fame Clips</b>$2,350–$4,999 a month for 60–95 Shorts<a href="#ev1">Proof 1 ↓</a></td></tr>
-        <tr><th scope="row"><b>2. Posted on all your channels</b><span>We post them for you, every day, on Instagram, TikTok, YouTube Shorts and Facebook. Each post gets its own title, description and hashtags.</span></th><td class="yes"><span class="ok"><span>Every day, all four channels</span></span></td><td class="q2"><span class="ok"><span>Every day, all four channels</span></span></td><td class="val"><b>Sprout Social, WebFX</b>$500–$5,000 a month. WebFX starts at $3,150.<a href="#ev2">Proof 2 ↓</a></td></tr>
-        <tr><th scope="row"><b>3. Your show, handled</b><span>We take each episode of your show from your recording to your audience: published, and announced to your list.</span></th><td class="yes"><span class="ok"><span>2 shows handled a month</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"><b>PodQuake, Cashflow Podcasting</b>$300–$1,199 a month<a href="#ev3">Proof 3 ↓</a></td></tr>
+        <tr><th scope="row"><b>1. New videos every day</b><span>We make two or three new Shorts for you every day, from your long videos. Each one has a yellow question first, your WTFreud! lettering and your end card.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>60–90 a month, more when needed</span></span></td><td class="q2" data-l="Lead Magnet Test · $600">Your 30 a month continue, on your current $300 plan</td><td class="val" data-l="What others charge for this piece"><b>ShortVids, Fame Clips</b>$2,350–$4,999 a month for 60–95 Shorts<a href="#ev1">Proof 1 ↓</a></td></tr>
+        <tr><th scope="row"><b>2. Posted on all your channels</b><span>We post them for you, every day, on Instagram, TikTok, YouTube Shorts and Facebook. Each post gets its own title, description and hashtags.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Every day, all four channels</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="ok"><span>Every day, all four channels</span></span></td><td class="val" data-l="What others charge for this piece"><b>Sprout Social, WebFX</b>$500–$5,000 a month. WebFX starts at $3,150.<a href="#ev2">Proof 2 ↓</a></td></tr>
+        <tr><th scope="row"><b>3. Your show, handled</b><span>We take each episode of your show from your recording to your audience: published, and announced to your list.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>2 shows handled a month</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"><b>PodQuake, Cashflow Podcasting</b>$300–$1,199 a month<a href="#ev3">Proof 3 ↓</a></td></tr>
         <tr class="grp"><th colspan="4">Your sales funnel</th></tr>
-        <tr><th scope="row"><b>Viewers become followers and contacts</b><span>The keyword funnel (lead magnet funnel). Viewers comment one word. Your page messages them, asks them to follow you, and sends your free gift in exchange for their email address. In the Full plan, each business gets its own: your two programs and the book, your practice, and The Gift House.</span></th><td class="yes"><span class="ok"><span>4 lead magnet funnels, one for each business</span></span></td><td class="q2"><span class="ok"><span>1 lead magnet funnel: Healing Narcissistic Wounds</span></span></td><td class="val"><b>Contra, ManyPixels</b>from $279 one time, or from $699 a month, for the gift and its page alone<a href="#ev6">Proof 6 ↓</a></td></tr>
-        <tr><th scope="row"><b>New contacts hear from you for two weeks</b><span>Welcome emails: five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes"><span class="ok"><span>5 per funnel</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"><b>Contra freelancers</b>from $1,500 per sequence<a href="#ev5">Proof 5 ↓</a></td></tr>
-        <tr><th scope="row"><b>Your list hears from you every week</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes"><span class="ok"><span>4 a month</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"><b>Email agencies</b>$300–$2,000 a month<a href="#ev4">Proof 4 ↓</a></td></tr>
-        <tr><th scope="row"><b>People book a consultation themselves</b><span>A calendar on your site. You open the hours that work for you, and people book themselves.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td class="q2"><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
+        <tr><th scope="row"><b>Viewers become followers and contacts</b><span>The keyword funnel (lead magnet funnel). Viewers comment one word. Your page messages them, asks them to follow you, and sends your free gift in exchange for their email address. In the Full plan, each business gets its own: your two programs and the book, your practice, and The Gift House.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>4 lead magnet funnels, one for each business</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="ok"><span>1 lead magnet funnel: Healing Narcissistic Wounds</span></span></td><td class="val" data-l="What others charge for this piece"><b>Contra, ManyPixels</b>from $279 one time, or from $699 a month, for the gift and its page alone<a href="#ev6">Proof 6 ↓</a></td></tr>
+        <tr><th scope="row"><b>New contacts hear from you for two weeks</b><span>Welcome emails: five short emails each new contact gets in their first two weeks. We write them, you approve them once.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>5 per funnel</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"><b>Contra freelancers</b>from $1,500 per sequence<a href="#ev5">Proof 5 ↓</a></td></tr>
+        <tr><th scope="row"><b>Your list hears from you every week</b><span>One email a week to your whole list, in your voice. You approve each one.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>4 a month</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"><b>Email agencies</b>$300–$2,000 a month<a href="#ev4">Proof 4 ↓</a></td></tr>
+        <tr><th scope="row"><b>People book a consultation themselves</b><span>A calendar on your site. You open the hours that work for you, and people book themselves.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="ok"><span>Included</span></span></td><td class="val" data-l="What others charge for this piece"></td></tr>
         <tr class="grp"><th colspan="4">Your websites</th></tr>
-        <tr><th scope="row"><b>Your sites turn more visitors into buyers</b><span>We keep your look and make each site sell: small errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes"><span class="ok"><span>All four sites, on a plan we agree with you</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"><b>Linear Design, Twine</b>$500–$3,000 per page<a href="#ev7">Proof 7 ↓</a></td></tr>
+        <tr><th scope="row"><b>Your sites turn more visitors into buyers</b><span>We keep your look and make each site sell: small errors fixed, a cleaner design by our designers, email sign-up built in. You choose how far we go on each one.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>All four sites, on a plan we agree with you</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"><b>Linear Design, Twine</b>$500–$3,000 per page<a href="#ev7">Proof 7 ↓</a></td></tr>
         <tr class="grp"><th colspan="4">Your bigger moments</th></tr>
-        <tr><th scope="row"><b>Your book launches to a waiting list</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"><b>Book marketing firms</b>$3,500–$7,500 per launch<a href="#ev8">Proof 8 ↓</a></td></tr>
-        <tr><th scope="row"><b>Webinars, run for you</b><span>When you want to run one: the sign-up page, reminders, the room, the tech on the day, the replay and the follow-up emails.</span></th><td class="yes"><span class="ok"><span>Included, whenever you want one</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"></td></tr>
-        <tr><th scope="row"><b>The Gift House, rebuilt to win bookings</b><span>Your home as a film and photo location: the website rebuilt around bookings, its own lead magnet funnel, and videos made from footage you film.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"></td></tr>
+        <tr><th scope="row"><b>Your book launches to a waiting list</b><span>A waitlist page, the first chapter as a gift, then launch videos and emails for February.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"><b>Book marketing firms</b>$3,500–$7,500 per launch<a href="#ev8">Proof 8 ↓</a></td></tr>
+        <tr><th scope="row"><b>Webinars, run for you</b><span>When you want to run one: the sign-up page, reminders, the room, the tech on the day, the replay and the follow-up emails.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Included, whenever you want one</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"></td></tr>
+        <tr><th scope="row"><b>The Gift House, rebuilt to win bookings</b><span>Your home as a film and photo location: the website rebuilt around bookings, its own lead magnet funnel, and videos made from footage you film.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"></td></tr>
         <tr class="grp"><th colspan="4">Working with us</th></tr>
-        <tr><th scope="row"><b>All the tools, paid by our team</b><span>The message tool, the email sender, the booking calendar and the webinar room. Our team pays for them and runs them. You pay nothing extra.</span></th><td class="yes"><span class="ok"><span>Included</span></span></td><td class="q2"><span class="ok"><span>Included</span></span></td><td class="val"></td></tr>
-        <tr><th scope="row"><b>You see what is working, every week</b><span>A weekly report: what we posted, which videos did best, new followers and email addresses, what comes next.</span></th><td class="yes"><span class="ok"><span>Every week</span></span></td><td class="q2"><span class="no">Not included</span></td><td class="val"></td></tr>
-        <tr><th scope="row"><b>Strategy calls, whenever you need us</b><span>Time with Benas and Simas to plan the next weeks. You pick the times that suit you.</span></th><td class="yes"><span class="ok"><span>Whenever you want one</span></span></td><td class="q2"><span class="ok"><span>2 calls a month</span></span></td><td class="val"><b>Marketing advisers</b>$2,000–$5,000 a month<a href="#ev9">Proof 9 ↓</a></td></tr>
-        <tr class="tot"><th scope="row"><b>Every month, in total</b><span>The Full plan replaces your $300 Shorts plan. The 22 Shorts still owed this month come on top, at no extra cost.</span></th><td class="yes">$2,500</td><td class="q2">$900<small>$600 plus your $300 Shorts plan</small></td><td class="val">$5,450–$18,198 a month, plus $12,616 and up in one-time builds</td></tr>
+        <tr><th scope="row"><b>All the tools, paid by our team</b><span>The message tool, the email sender, the booking calendar and the webinar room. Our team pays for them and runs them. You pay nothing extra.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="ok"><span>Included</span></span></td><td class="val" data-l="What others charge for this piece"></td></tr>
+        <tr><th scope="row"><b>You see what is working, every week</b><span>A weekly report: what we posted, which videos did best, new followers and email addresses, what comes next.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Every week</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="no">Not included</span></td><td class="val" data-l="What others charge for this piece"></td></tr>
+        <tr><th scope="row"><b>Strategy calls, whenever you need us</b><span>Time with Benas and Simas to plan the next weeks. You pick the times that suit you.</span></th><td class="yes" data-l="Full Business · $2,500"><span class="ok"><span>Whenever you want one</span></span></td><td class="q2" data-l="Lead Magnet Test · $600"><span class="ok"><span>2 calls a month</span></span></td><td class="val" data-l="What others charge for this piece"><b>Marketing advisers</b>$2,000–$5,000 a month<a href="#ev9">Proof 9 ↓</a></td></tr>
+        <tr class="tot"><th scope="row"><b>Every month, in total</b><span>The Full plan replaces your $300 Shorts plan. The 22 Shorts still owed this month come on top, at no extra cost.</span></th><td class="yes" data-l="Full Business">$2,500</td><td class="q2" data-l="Lead Magnet Test">$900<small>$600 plus your $300 Shorts plan</small></td><td class="val" data-l="Bought piece by piece">$5,450–$18,198 a month, plus $12,616 and up in one-time builds</td></tr>
       </tbody>
     </table></div>
     <details class="evid" open><summary>The proof for every price in the last column</summary>
@@ -823,8 +867,8 @@ section[id],header .toc{scroll-margin-top:84px}
       <p class="lede">Pick your plan and pay the first month. We start the same day.</p>
       <p class="urge">Your book is out in February. Starting in December means launching to a warm list.</p>
       <div class="btns noprint">
-        <a class="btn primary" href="https://buy.stripe.com/14AaEX0QydZ2flQgv85EY1a?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Sales Engine: Full Business · $2,500 a month</a>
-        <a class="btn ghost" href="https://buy.stripe.com/9B614nbvc5sw2z4ceS5EY1b?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Lead Magnet Test · $600 a month</a>
+        <a class="btn primary" href="https://buy.stripe.com/14AaEX0QydZ2flQgv85EY1a?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Sales Engine: Full Business · $2,500&nbsp;a&nbsp;month</a>
+        <a class="btn ghost" href="https://buy.stripe.com/9B614nbvc5sw2z4ceS5EY1b?client_reference_id=scope-dr-judy&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Lead Magnet Test · $600&nbsp;a&nbsp;month</a>
       </div>
       <div class="btns noprint" style="margin-top:12px">
         <a class="btn ghost" href="mailto:ben@getbejucreative.com?subject=Invoice%20for%20Psychological%20Healing%20Center%20(BEJ-2026-0123)">Request an invoice</a>
@@ -844,6 +888,9 @@ section[id],header .toc{scroll-margin-top:84px}
 const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
 if (location.search.includes("print")) openAll();
 addEventListener("beforeprint", openAll);
+const ev = document.querySelector("details.evid");
+if (ev && matchMedia("screen and (max-width:760px)").matches && !location.search.includes("print")) ev.open = false;
+document.querySelectorAll('a[href^="#ev"]').forEach(a => a.addEventListener("click", () => { if (ev) ev.open = true; }));
 
 </script>
 </body>
