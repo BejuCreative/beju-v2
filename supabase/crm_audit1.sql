@@ -88,3 +88,11 @@ create trigger audit after insert or update or delete on public.clients       fo
 drop trigger if exists audit on public.promises;
 create trigger audit after insert or update or delete on public.promises      for each row execute function public.audit_row('id');
 -- pipeline: see the PIPELINE block appended below after the no-op measurement.
+
+-- PIPELINE (measured 11-21 13:05–13:58 UTC): the cloud ops-sync rewrites all 163 rows every 10 min with ZERO real changes
+-- (skipped as no-ops), but the Mac crm_sync and ops-sync parse Samples times around the 10-25 DST change one hour apart,
+-- so last_reply_at flips on 3 rows twice an hour. So pipeline is audited with a column filter: only the fields people and
+-- agents decide. lead_next_step (crm_touch3.sql) reads the next_action write times from here.
+drop trigger if exists audit on public.pipeline;
+create trigger audit after insert or update or delete on public.pipeline for each row
+  execute function public.audit_row('email', '+fu_stage,fu_day0,fu_note,next_action,next_action_at,owner,status');
