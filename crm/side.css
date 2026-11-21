@@ -789,6 +789,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .clc-x{font-size:13px}
   .sp-h p,.sd-card .tt,.sd-pc .tt,.cl-pr{font-size:15px}
   .sn-brand small,.sn-cap,.sn-badge{font-size:13px}
+  .wbr-tl,.sn-cap{color:var(--mute)}   /* faint grey was 2.5:1 on the cards / menu */
   .fe-m b,.cl-item .t,.cl-item .s,.ex-tile small,.sd-pt b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* wrap to 2 lines, not "…" */
   .sp-tbl,.sp-alert,.cl-head p{font-size:14px}
   .sd-chips .chip,.cl-tools .chip,.ab-st .act,.sd-add{min-height:44px;height:auto}
