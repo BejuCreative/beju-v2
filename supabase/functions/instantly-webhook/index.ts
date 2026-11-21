@@ -25,10 +25,15 @@ async function sha256(s: string) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
+// Instantly's 20 calls/min are shared with ops-sync: on 429 wait and retry (4 s, 8 s, 16 s), so a reply still lands in
+// seconds when Instantly is busy. Still failing -> the error is stored and ops-sync picks the reply up within 10 min.
 async function ig(path: string) {
-  const r = await fetch("https://api.instantly.ai/api/v2" + path, { headers: { Authorization: `Bearer ${IKEY}` } });
-  if (!r.ok) throw new Error(`Instantly ${r.status} ${path.split("?")[0]}`);
-  return r.json();
+  for (let attempt = 0; ; attempt++) {
+    const r = await fetch("https://api.instantly.ai/api/v2" + path, { headers: { Authorization: `Bearer ${IKEY}` } });
+    if (r.ok) return r.json();
+    if (r.status !== 429 || attempt >= 3) throw new Error(`Instantly ${r.status} ${path.split("?")[0]}`);
+    await new Promise((res) => setTimeout(res, 4000 * 2 ** attempt));
+  }
 }
 
 // Refresh one lead exactly like ops-sync.replies() does for every lead (7-day window, REAL/AUTO, answered).
