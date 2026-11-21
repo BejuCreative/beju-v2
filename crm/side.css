@@ -680,3 +680,20 @@ tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-ch
 /* 11-21 To-dos from public.task_queue: the lead a task belongs to (one chip) + a Done tick */
 .sd-card .sd-lead{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sd-card .sd-tick:hover{color:var(--green);opacity:1}
+/* 11-21 Clients page: Calls section (Upcoming / Past calls), one row per call; a tap opens crm.js's full call card */
+.clc-h{font-size:13px;font-weight:600;color:var(--mute);margin:14px 0 4px}
+.clc-list{display:grid}
+.clc-row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:2px 0}
+.clc-list > .clc-row:first-child{border-top:0}
+.clc-m{flex:1;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:baseline;text-align:left;padding:8px 6px;min-height:44px;border-radius:10px;color:inherit;font:inherit;background:none;border:0}
+button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
+.clc-d{font-family:var(--mono);font-size:12.5px;font-weight:500;white-space:nowrap}
+.clc-w{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clc-s,.clc-x{grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clc-s{font-size:13.5px} .clc-x{font-size:12.5px;color:var(--mute)}
+.clc-miss{color:var(--red);font-weight:600}
+.clc-add,.clc-meet{flex:none}
+.clc-card{padding:2px 0 12px}
+.clc-none{font-size:13px;margin:0}
+.clc-more{margin-top:6px}
+@media (max-width:600px){.clc-row{flex-wrap:wrap} .clc-m{grid-template-columns:minmax(0,1fr)} .clc-add,.clc-meet{height:44px;flex:1 1 100%;justify-content:center;margin-bottom:6px} .clc-more{min-height:44px}}

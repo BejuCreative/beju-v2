@@ -118,7 +118,7 @@ function show(p) {
   slackLive(p === "slack");
   if (was !== p) scrollTo(0, 0);
 }
-function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }
+function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT && !$(".cl-oe, .cnform", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
 function stopTimer() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 
 /* keys: [ toggles the rail, Escape closes the phone drawer */
@@ -477,7 +477,7 @@ function wireEmail() {
 
 /* 3. clients + their videos (SIMAS 11-19 15:3x: grouped by category, retainer plans, videos by date, today's highlighted) */
 async function loadClients() {
-  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs] = await Promise.all([
+  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs, calls, cNotes, cTasks] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,amount,refunded,paid_at,package"),
@@ -490,6 +490,9 @@ async function loadClients() {
     all("pipeline", "email,next_action,status").catch(() => []),
     all("order_progress", "*", q => q.order("opened_at")),
     all("order_problems", "*").catch(() => []),
+    all("calls", "uid,name,email,title,start_at,end_at,status,organizer,meet_url", q => q.order("start_at", { ascending: false })).catch(() => []),
+    all("touches", "id,call_uid,summary,takeaways,recording_url", q => q.not("call_uid", "is", null)).catch(() => []),
+    all("call_tasks", "id,touch_id,text,owner,due_at,done_at", q => q.order("id")).catch(() => []),
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
   const vids = {}, paid = {}, nPay = {}, lastPay = {};
@@ -544,7 +547,7 @@ async function loadClients() {
     ["past", "Past / parted ways", by("past").sort((a, b) => (b.last || "").localeCompare(a.last || ""))]];
   const ds = st.find(x => x.name === "deliveries");
   const allP = list.flatMap(c => c.packs.map(o => ({ ...o, client: c.name }))), nSt = k => allP.filter(o => o.st === k).length;
-  return { list, groups, t, counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  return { list, groups, t, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
 function clientDetail(c, t) {
@@ -565,7 +568,46 @@ function fillCalls() {
   const el = $("#cl-detail .cl-calls"); if (!el || !window.BEJU_CRM_CALLS) return;
   window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = `<div class="cl-plan"><b class="cl-ph">Calls</b>${html}</div>`; }, () => {});
 }
-let CL_TODAY = false, CLF = "";
+let CL_TODAY = false, CLF = "", CALLS_ALL = false;
+/* 11-21 (SIMAS: "in the clients tab, we need a new section about the calls that would be clear"): Upcoming (cal.com bookings still to
+   come: when in Vilnius, who, what about, the Meet link) and Past calls (newest first, one row each: when, who, the summary's first
+   line, takeaways, open next tasks). No notes = a red "Notes missing" + Add call notes. A tap opens crm.js's full call card. */
+function callModel(calls, notes, tasks) {
+  const now = Date.now(), live = calls.filter(c => !/cancel/i.test(c.status || "")), note = {}, tk = {};
+  notes.forEach(n => { note[n.call_uid] = n; }); tasks.forEach(x => (tk[x.touch_id] = tk[x.touch_id] || []).push(x));
+  const row = c => { const n = note[c.uid] || null; return { c, n, tasks: n ? tk[n.id] || [] : [] }; }, at = c => +new Date(c.start_at);
+  return { up: live.filter(c => at(c) > now).sort((a, b) => at(a) - at(b)).map(row), past: live.filter(c => at(c) <= now).sort((a, b) => at(b) - at(a)).map(row) };
+}
+const wkd = t => new Date(t).toLocaleDateString("en-GB", { timeZone: TZ, weekday: "short" });
+const callWhen = t => `${wkd(t)}, ${dLabel(dayOf(t))} · ${hm(t)}`;
+const callAbout = c => String(c.title || "").replace(/\s+between\s+beju creative\s+and\s+.*$/i, "").trim() || "Call";
+function callUp({ c }) {
+  const meet = webUrl(c.meet_url || "");
+  return `<div class="clc-row clc-up"><span class="clc-m"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span><span class="clc-s">${esc(callAbout(c))}</span></span>${meet ? `<a class="act go clc-meet" href="${esc(meet)}" target="_blank" rel="noopener noreferrer">${ic("link")}Join Meet</a>` : ""}</div>`;
+}
+function callPast({ c, n, tasks }) {
+  const ended = +new Date(c.end_at || c.start_at), missing = !n && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at), tk = n && n.takeaways ? n.takeaways.length : 0;
+  const line = n ? String(n.summary || "").split("\n")[0] : "";
+  const extra = [tk ? `${tk} takeaway${tk === 1 ? "" : "s"}` : "", open.length ? `next: ${open[0].owner}, ${open[0].text}${open.length > 1 ? ` (+${open.length - 1} more)` : ""}` : tasks.length ? "tasks done" : ""].filter(Boolean).join(" · ");
+  return `<div class="clc-row" data-uid="${esc(c.uid)}"><button type="button" class="clc-m" data-callopen="${esc(c.uid)}" aria-expanded="false"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span>
+    ${n ? `<span class="clc-s">${esc(line)}</span>` : `<span class="clc-s ${missing ? "clc-miss" : "mut"}">${missing ? "Notes missing" : "No notes yet"}</span>`}${extra ? `<span class="clc-x">${esc(extra)}</span>` : ""}</button>
+    ${n ? "" : `<button type="button" class="act clc-add" data-calladd="${esc(c.uid)}">${ic("edit")}Add call notes</button>`}</div><div class="clc-card" data-card-uid="${esc(c.uid)}" hidden></div>`;
+}
+const callsSec = m => m ? `<section class="card sp-card clc" id="clc">${callsInner(m)}</section>` : "";
+function callsInner(m) {
+  const past = CALLS_ALL ? m.past : m.past.slice(0, 5);
+  return `<h2>Calls</h2>
+    <h3 class="clc-h">Upcoming</h3>${m.up.length ? `<div class="clc-list">${m.up.map(callUp).join("")}</div>` : `<p class="mut clc-none">No calls booked.</p>`}
+    <h3 class="clc-h">Past calls</h3>${past.length ? `<div class="clc-list">${past.map(callPast).join("")}</div>${m.past.length > 5 ? `<button type="button" class="more clc-more" data-callmore>${CALLS_ALL ? "Show fewer" : `Show all ${m.past.length}`}</button>` : ""}` : `<p class="mut clc-none">No calls yet.</p>`}`;
+}
+function callToggle(uid, add) {   // open / close the full call card under its row; add = open the notes form right away
+  const sec = $("#clc"), btn = sec && $(`[data-callopen="${CSS.escape(uid)}"]`, sec), box = sec && $(`[data-card-uid="${CSS.escape(uid)}"]`, sec); if (!btn || !box) return;
+  const on = add || box.hidden, row = CACHE.clients && CACHE.clients.calls.past.find(r => r.c.uid === uid);
+  if (on && box.hidden) { box.innerHTML = window.BEJU_CRM_CALLCARD && row ? window.BEJU_CRM_CALLCARD(row) : ""; box.hidden = !box.innerHTML; }
+  else if (!on) { box.hidden = true; box.innerHTML = ""; }
+  btn.setAttribute("aria-expanded", !box.hidden);
+  if (add) { const a = $('[data-act="cnadd"]', box); if (a && !a.hidden) a.click(); }
+}
 const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Complete", "g"], unknown: ["Size unknown", ""], past: ["Past client", ""], parked: ["Parked", ""], custom: ["Custom", ""],
   paused: ["Paused", "b"], refunded: ["Refunded", ""], canceled: ["Canceled", ""], legacy: ["Older order", ""] };
 const OKIND = [["pack", "Pack"], ["monthly", "Monthly"], ["long", "Long-form"], ["custom", "Custom"], ["referral", "Referral"], ["legacy", "Older order"]];
@@ -604,6 +646,7 @@ function viewClients(d) {
   <div class="cl-filt${d.counts.paused ? " n6" : ""}" role="group" aria-label="Filter by status">${[["retainer", "Retainers ongoing", "acc"], ["progress", "Packs in progress", "o"], ["finished", "Packs complete", "g"], ["notstarted", "Not started", ""], ["waiting", "Waiting on client", "b"], ...(d.counts.paused ? [["paused", "Paused", "b"]] : [])].map(([k, l, cl]) => `<button type="button" class="cl-fb ${cl}${CLF === k ? " on" : ""}" data-clf="${k}" aria-pressed="${CLF === k}"><b>${d.counts[k]}</b><span>${l}</span></button>`).join("")}</div>
   ${d.counts.unknown ? `<p class="sp-note">Size unknown for ${d.counts.unknown} order${d.counts.unknown === 1 ? "" : "s"} (not guessed, set it with Fix): ${esc(d.unknownL.join("; "))}.</p>` : ""}
   ${d.list.some(c => c.att.length) ? `<section class="card sp-card"><h2>Needs attention <small>${d.list.filter(c => c.att.length).length} client${d.list.filter(c => c.att.length).length === 1 ? "" : "s"}</small></h2><div class="sp-alerts">${d.list.filter(c => c.att.length).flatMap(c => c.att.map(a => `<a class="sp-alert ${a[0] === "r" ? "red" : "amber"} cl-go" href="?p=clients&amp;c=${esc(c.id)}" data-cl-go="${esc(c.id)}"><i></i><span><b>${esc(c.name)}</b> · ${esc(a[1])}</span></a>`)).join("")}</div></section>` : ""}
+  ${callsSec(d.calls)}
   <div class="cl-wrap"><section class="card sp-card"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><button type="button" class="chip${CL_TODAY ? " g" : ""}" id="cl-today" aria-pressed="${CL_TODAY}" title="Show only clients who got videos today">Delivered today · ${d.todayC}</button></div>
     <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="chip">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div></section>
     <section class="card sp-card" id="cl-detail">${clientDetail(sel, d.t)}</section></div>`;
@@ -650,6 +693,11 @@ function wireClients() {
   });
   $$("[data-clf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { CLF = CLF === b.dataset.clf ? "" : b.dataset.clf; $$("[data-clf]", PAGE_EL).forEach(x => { const on = x.dataset.clf === CLF; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); filterClients(); }));
   $$(".ring[data-v]", PAGE_EL).forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1]));
+  $("#clc")?.addEventListener("click", ev => {
+    const o = ev.target.closest("[data-callopen]"), a = ev.target.closest("[data-calladd]"), more = ev.target.closest("[data-callmore]");
+    if (o) callToggle(o.dataset.callopen, false); else if (a) callToggle(a.dataset.calladd, true);
+    else if (more) { CALLS_ALL = !CALLS_ALL; $("#clc").innerHTML = callsInner(CACHE.clients.calls); $("#clc [data-callmore]")?.focus(); }
+  });
   filterClients(); fillCalls();
   $("#cl-list")?.addEventListener("click", ev => {
     const a = ev.target.closest("[data-cl]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
