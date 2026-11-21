@@ -58,20 +58,26 @@ Everything is read-only except the client-portal actions, which make the same wr
 | Deliver a version | insert `video_versions`, set open `video_notes.done_at`, then update `videos` (status, link, version, dates) |
 | Add a pack (someone who paid outside the portal) | insert `purchases` |
 | Change password | the signed-in user's own password (`auth.updateUser`) |
+| Notification: Mark read / Snooze / Done / Mark all read (11-21) | the founder's own `crm_event_state` rows (upsert on `user_id, event_id`); Mark all read calls `crm_mark_all_read()` |
+| Log a touch (notification or lead drawer, 11-21) | insert one `touches` row: kind, summary, next step + date (09:00 Vilnius), `actor` = the founder, `source` = `crm` |
+| Post to Slack (11-21) | the edge function `slack-post` with the founder's JWT; the post boxes show only after a probe (`{probe: true}` answered `{ok: true}`) |
 
-Every action shows a confirm sheet that says what the client will see. Links must be http or https. Nothing else is ever inserted, updated or deleted. SQL that these rely on: `supabase/crm_bento1.sql`.
+Every client-portal action shows a confirm sheet that says what the client will see. Links must be http or https. Nothing else is ever inserted, updated or deleted. SQL that these rely on: `supabase/crm_bento1.sql`.
 
 ## Live data
 
 - Realtime (Supabase) on `payments, reply_queue, sample_requests, videos, video_notes, profiles`: a change shows a toast at once and triggers one refresh about 1.5 seconds later (bursts are merged). A new payment also throws confetti.
 - A full refresh runs every 60 seconds as well. The status chip says "Live" or "Polling" truthfully.
+- Notifications (11-21): the bell in the top bar counts unread `crm_inbox` rows of the last 14 days (the tab title shows the count too). Realtime on `crm_events` adds new ones at once; hot / money / alert ones also show a toast with Open and Snooze, and, only after "Desktop alerts" was clicked in the panel, a desktop notification while the tab is in the background. What a founder did himself (actor = his name) never counts as unread for him. Snoozed items come back by themselves. The bell stays hidden until `crm_inbox` answers.
+- Slack (11-21): the Slack page (`?p=slack`) lists the latest #claude-sync and #red-alert messages from `slack_messages`; a Slack notification opens it at its message (`&ts=`).
+- Lead drawer (11-21): stage chip (`lead_stage`: stage · days in it, orange when overdue), the evidence line, the next step (`lead_next_step`), Log a touch, and Touchpoints (`lead_timeline`, newest first, 15 + Show all). Pipeline card: `pipeline_forecast` (open stages, overdue, weighted forecast); with the owner switch on, the same sums from `lead_stage`.
 - Conversations: `threads.body` holds the full text; rows not backfilled yet show the short preview and say so.
 
 ## Using it
 
 - Every number, chart mark and row opens the list behind it. Lists open leads; leads open the whole conversation.
 - Period switch (Today · 7d · 30d · Month) in the hero drives the hero chips, the money card and the outreach range. Owner switch (All · Simas · Benas) filters every pipeline card.
-- Shortcuts: `⌘K` / `Ctrl K` search and actions · `/` lead search · arrows in a chart move through days, in a lead they move through the list · `Enter` opens · `Esc` closes · `W` wall mode.
+- Shortcuts: `⌘K` / `Ctrl K` search and actions · `/` lead search · `N` notifications · arrows in a chart move through days, in a lead they move through the list · `Enter` opens · `Esc` closes · `W` wall mode.
 
 ## Phone (600px and narrower)
 
