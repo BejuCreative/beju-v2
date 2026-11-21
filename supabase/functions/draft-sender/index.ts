@@ -78,7 +78,11 @@ async function sendOne(d: any): Promise<string> {
     .sort((a: any, b: any) => (a.timestamp_email || "").localeCompare(b.timestamp_email || ""));
   const latest = thread[thread.length - 1];
   if (!latest) throw new Refused("thread not found in Instantly");
-  if (latest.id !== d.reply_to_id) return await finish(d.id, "stale", { error: `thread moved since the draft: newer email ${latest.id} (${latest.timestamp_email})` });
+  const base = thread.find((m: any) => m.id === d.reply_to_id) ?? await ig("GET", `/emails/${encodeURIComponent(d.reply_to_id)}`).catch(() => null);
+  if (!base) throw new Refused(`the email the draft answers (${d.reply_to_id}) is not in the thread any more`);
+  const newer = thread.filter((m: any) => m.id !== base.id && (m.timestamp_email || "") > (base.timestamp_email || ""));
+  if (latest.id !== d.reply_to_id || newer.length)
+    return await finish(d.id, "stale", { error: `thread moved since the draft: newer email ${(newer[newer.length - 1] || latest).id} (${(newer[newer.length - 1] || latest).timestamp_email})` });
   const inbound = thread.filter((m: any) => lc(m.from_address_email) !== lc(m.eaccount));
   const last = inbound[inbound.length - 1];
   if (!last) throw new Refused("no email from the lead to reply to");
@@ -95,13 +99,15 @@ async function sendOne(d: any): Promise<string> {
   let r: any;
   try { r = await ig("POST", "/emails/reply", payload); }
   catch (e) { if (e instanceof Busy || e instanceof Refused) throw e; throw new Unknown(String((e as Error).message || e)); }
-  return await finish(d.id, "sent", { sent_at: new Date().toISOString(), sent_email_id: r?.id ?? null, error: null });
+  try { return await finish(d.id, "sent", { sent_at: new Date().toISOString(), sent_email_id: r?.id ?? null, error: null }); }
+  catch (e) { throw new Unknown(`SENT (Instantly id ${r?.id ?? "?"}) but recording it failed: ${String((e as Error).message || e)}`); }
 }
 
 // ---- founder alerts in #red-alert. reminders: 0 = not posted yet, 1 = posted, 2 = 1-h nudge, 3 = 3-h nudge.
 const SLACK = Deno.env.get("SLACK_TOKEN") ?? "", RED_ALERT = "C0CHQ5LV7L4", CRM = "https://bejucreative.digital/crm/";
 const FOUNDERS = "<@U0C55SK8MN0> <@U0C528KBKKL>";
 const CAT: Record<string, string> = { big_deal: "Big deal / scope", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name (50k+)", other: "Needs a founder" };
+const esc2 = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");   // Slack-safe text
 async function slack(text: string) {
   if (!SLACK) throw new Error("SLACK_TOKEN not set");
   const r = await (await fetch("https://slack.com/api/chat.postMessage", { method: "POST", signal: AbortSignal.timeout(15000),
@@ -115,19 +121,26 @@ async function remind(): Promise<string[]> {
   if (error) return [`reminders: ${error.message}`];
   const now = Date.now();
   for (const d of data || []) {
-    const age = (now - Date.parse(d.created_at)) / 60000, head = `${CAT[d.category] || d.category} · ${d.lead_email} · from ${d.inbox}`;
+    const age = (now - Date.parse(d.created_at)) / 60000, head = `${CAT[d.category] || esc2(d.category)} · ${esc2(d.lead_email)} · from ${esc2(d.inbox)}`;
     let step = 0, text = "";
     if (d.reminders === 0) {
       step = 1;
-      text = `:red_circle: *APPROVAL NEEDED* (draft #${d.id}) ${FOUNDERS}\n${head}\n_Why:_ ${d.reason || "-"}` +
-        (d.lead_last_snippet ? `\n_They wrote:_ ${d.lead_last_snippet.slice(0, 300)}` : "") +
-        (d.warnings?.length ? `\n_Flags:_ ${d.warnings.join("; ")}` : "") +
-        `\n\`\`\`${d.body}\`\`\`\nApprove / Edit / Hold in the CRM: ${CRM} (nothing sends until a founder approves).`;
+      text = `:red_circle: *APPROVAL NEEDED* (draft #${d.id}) ${FOUNDERS}\n${head}\n_Why:_ ${esc2(d.reason || "-")}` +
+        (d.lead_last_snippet ? `\n_They wrote:_ ${esc2(d.lead_last_snippet.slice(0, 300))}` : "") +
+        (d.warnings?.length ? `\n_Flags:_ ${esc2(d.warnings.join("; "))}` : "") +
+        `\n\`\`\`${esc2(d.body)}\`\`\`\nApprove / Edit / Hold in the CRM: ${CRM} (nothing sends until a founder approves).`;
     } else if (d.status === "pending" && d.reminders === 1 && age >= 60) { step = 2; text = `:hourglass: Still waiting 1 h: draft #${d.id} · ${head} ${FOUNDERS}`; }
     else if (d.status === "pending" && d.reminders === 2 && age >= 180) { step = 3; text = `:hourglass: Still waiting 3 h: draft #${d.id} · ${head} ${FOUNDERS}. It stays on the morning list until a founder answers.`; }
     if (!step) continue;
-    try { await slack(text); await sb.from("drafts").update({ reminders: step, last_reminded_at: new Date().toISOString() }).eq("id", d.id); out.push(`#${d.id} alert ${step}`); }
-    catch (e) { out.push(`#${d.id} alert failed: ${String(e).slice(0, 80)}`); }
+    // claim this reminder step first (only one run can), post, and give it back if Slack fails
+    const { data: mine } = await sb.from("drafts").update({ reminders: step, last_reminded_at: new Date().toISOString() })
+      .eq("id", d.id).eq("reminders", d.reminders).select("id");
+    if (!mine || !mine.length) continue;
+    try { await slack(text); out.push(`#${d.id} alert ${step}`); }
+    catch (e) {
+      await sb.from("drafts").update({ reminders: d.reminders }).eq("id", d.id).eq("reminders", step);
+      out.push(`#${d.id} alert failed: ${String(e).slice(0, 80)}`);
+    }
   }
   const vil = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Vilnius", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
   if (vil === "08:00") {
@@ -144,14 +157,20 @@ async function remind(): Promise<string[]> {
 Deno.serve(async (req) => {
   if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return new Response("forbidden", { status: 403 });
   const done: string[] = [];
+  const { data: stuck } = await sb.from("drafts").select("id,to_email,inbox").eq("status", "sending").lt("updated_at", new Date(Date.now() - 10 * 60000).toISOString());
+  for (const x of stuck || []) {
+    const r = await finish(x.id, "unknown", { error: "stuck in 'sending' over 10 min (a run was cut off): it may or may not have gone out, check Instantly" }).catch((e) => `#${x.id} stuck: ${e}`);
+    done.push(r);
+    await slack(`:warning: Draft #${x.id} to ${esc2(x.to_email)} from ${esc2(x.inbox)} was cut off mid-send; marked UNKNOWN (no resend). ${FOUNDERS} check Instantly, then close it in the CRM.`).catch(() => {});
+  }
   const { data: ready, error } = await sb.from("drafts").select("id").eq("status", "approved").order("decided_at").limit(2);
   if (error) return new Response(error.message, { status: 500 });
   for (const { id } of ready || []) {
     const { data: claimed, error: cErr } = await sb.rpc("draft_claim", { p_id: id });
     const d = Array.isArray(claimed) ? claimed[0] : claimed;
     if (cErr || !d || !d.id) { done.push(`#${id} not claimed${cErr ? ": " + cErr.message : ""}`); continue; }
-    await slack(`:outbox_tray: Sending draft #${d.id} to ${d.to_email} from ${d.inbox} (approved by ${d.decided_by}).`).catch(() => {});
-    try { done.push(await sendOne(d)); }
+    let outcome = "";
+    try { outcome = await sendOne(d); done.push(outcome); }
     catch (e) {
       const why = String((e as Error).message || e).slice(0, 300);
       if (e instanceof Busy) {   // Instantly busy: give the claim back for the next minute
@@ -159,9 +178,14 @@ Deno.serve(async (req) => {
         done.push(`#${d.id} released (Instantly busy)`);
       } else {
         // unknown ONLY if the send call itself had an unclear result; anything before it = definitely not sent = failed
-        done.push(await finish(d.id, e instanceof Unknown ? "unknown" : "failed", { error: why }).catch((x) => `#${d.id} finish failed: ${x}`));
+        outcome = await finish(d.id, e instanceof Unknown ? "unknown" : "failed", { error: why }).catch((x) => `#${d.id} finish failed (stays in 'sending'): ${x}`);
+        done.push(outcome);
       }
     }
+    // the outcome, not a "sending…" notice: sent / stale / failed / unknown, with the reason
+    const ok = /^#\d+ sent/.test(outcome);
+    await slack(`${ok ? ":white_check_mark: Sent" : ":warning: NOT sent"}: draft #${d.id} to ${esc2(d.to_email)} from ${esc2(d.inbox)} (approved by ${esc2(d.decided_by)}). ${esc2(outcome)}` +
+      (ok ? "" : ` ${FOUNDERS} check it in the CRM.`)).catch(() => {});
     await sleep(3000);
   }
   done.push(...await remind().catch((e) => [`reminders failed: ${String(e).slice(0, 100)}`]));

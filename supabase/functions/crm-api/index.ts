@@ -284,6 +284,13 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reply_to_id)) bad("reply_to_id must be the Instantly email id (UUID)");
     const cc = (emails(a, "cc") || []).filter((x) => !/beju/i.test(x.split("@")[1] || ""));
     const warnings = Array.isArray(a?.warnings) ? a.warnings.map((w: unknown) => String(w).slice(0, 200)).slice(0, 20) : [];
+    // checks the sender enforces, computed HERE (not trusted from the caller): layout wall + a hard no from the lead
+    const text = String(a?.body ?? ""), last = String(a?.lead_last ?? "");
+    let run = 0, wall = false;
+    for (const ln of text.split("\n")) { const t = ln.trim(); if (!t) { run = 0; continue; } if (/^(- |• |http)/.test(t)) continue; if (++run >= 4) { wall = true; break; } }
+    if (wall) warnings.push("block: layout (4+ text lines without a blank line)");
+    if (/^\s*(no,? thanks?( you)?|not interested|no thank you|stop|unsubscribe|remove me|please remove( me)?|i.?ll pass)\b[\s.!]*$/i.test(last.slice(0, 120)))
+      warnings.push("block: hard pass (the lead said a flat no; lane 0 = no reply)");
     const body = { lead_email: email(a, "lead")!, inbox, reply_to_id, to_email: email(a, "to")!, cc_list: cc,
       lead_last_snippet: str(a, "lead_last", { req: true, max: 1000 }),
       category: oneOf(str(a, "category", { req: true, max: 20 }), ["big_deal", "client_problem", "new_terms", "big_name", "other"], "category"),
