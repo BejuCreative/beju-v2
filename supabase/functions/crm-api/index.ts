@@ -277,11 +277,18 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
   // ---- founder approvals (crm_drafts1.sql; BENAS 11-21 lane 3: big deals + scopes, client problems, new terms, big names)
   // A Claude can only CREATE a pending draft and read the list. Approving is a founder action in the CRM (is_admin + MFA);
   // the plain draft-sender sends only the exact approved text, and only if the thread hasn't moved since reply_to_id.
-  async draft_create(a, actor, db) {   // {lead, inbox, reply_to_id, category, reason, body}
-    const body = { lead_email: email(a, "lead")!, inbox: email(a, "inbox")!, reply_to_id: str(a, "reply_to_id", { req: true, max: 80 })!,
+  async draft_create(a, actor, db) {   // {lead, inbox, reply_to_id, to, cc?, lead_last, category, reason, body, warnings?}
+    const inbox = email(a, "inbox")!;
+    if (!/@([a-z0-9-]+\.)*[a-z0-9-]*beju[a-z0-9-]*\.(com|org|digital|net|co|io)$/i.test(inbox)) bad("inbox must be one of our sending inboxes");
+    const reply_to_id = str(a, "reply_to_id", { req: true, max: 80 })!;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reply_to_id)) bad("reply_to_id must be the Instantly email id (UUID)");
+    const cc = (emails(a, "cc") || []).filter((x) => !/beju/i.test(x.split("@")[1] || ""));
+    const warnings = Array.isArray(a?.warnings) ? a.warnings.map((w: unknown) => String(w).slice(0, 200)).slice(0, 20) : [];
+    const body = { lead_email: email(a, "lead")!, inbox, reply_to_id, to_email: email(a, "to")!, cc_list: cc,
+      lead_last_snippet: str(a, "lead_last", { req: true, max: 1000 }),
       category: oneOf(str(a, "category", { req: true, max: 20 }), ["big_deal", "client_problem", "new_terms", "big_name", "other"], "category"),
-      reason: str(a, "reason", { max: 500 }), body: str(a, "body", { req: true, max: 8000 })!, created_by: actor };
-    return (await must<any[]>(db.from("drafts").insert(body).select("id,lead_email,inbox,category,status,created_at")))[0];
+      reason: str(a, "reason", { req: true, max: 500 }), warnings, body: str(a, "body", { req: true, max: 8000 })!, created_by: actor };
+    return (await must<any[]>(db.from("drafts").insert(body).select("id,lead_email,inbox,to_email,cc_list,category,status,created_at")))[0];
   },
   async drafts(a, _actor, db) {   // {all?}: waiting drafts (pending / held / approved); all=true adds the last 50 decided
     if (!a?.all) return await must(db.from("drafts_waiting").select("*"));
