@@ -705,8 +705,9 @@ const byId = id => CARDS.find(c => c.id === id);
 // BENAS 11-21: stats cards live in their category; Main keeps the action cards plus Reply rate + Funnel.
 // On phones every card shows only in its tab (as before). On desktop, Main shows everything except STATS_TAB_ONLY,
 // and the other tabs show their own cards, so the stats are one click away instead of filling the main page.
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups", "rate", "funnel"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "away", "pipeline"],
-  outreach: ["outreach", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand"] };
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups", "rate", "funnel"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price", "videos"], leads: ["attention", "moods", "samples", "turn", "speed", "away", "pipeline"],
+  outreach: ["outreach", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients"], none: ["brand"] };
+// phone pass 11-21: the bottom "Clients" tab opens the Clients page (portal cards are hidden), so Videos delivered sits under Money.
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 const STATS_TAB_ONLY = new Set(["moods", "heat", "clock", "speed", "turn", "total", "alltime", "topc", "away"]);   // off the desktop Main page
 
@@ -800,7 +801,7 @@ function syncChrome() {   // header owner switch + tab badges
   const bd = { home: D.nextN, clients: D.pOpen, leads: D.realWaiting }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });
 }
 function setTab(t, quiet) {
-  if (!TABS[t] || t === "none") t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
+  if (!TABS[t] || t === "none" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
   $$("#tabs button").forEach(b => { const on = b.dataset.t === t; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
   if (!quiet) scrollTo(0, 0);
   requestAnimationFrame(() => { CARDS.forEach(c => { if (c.el) fit(c.el); }); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); });
@@ -1488,6 +1489,7 @@ document.addEventListener("click", ev => {
   else if (a === "owner") { STATE.owner = b.dataset.o; STATE.att = ""; renderAll(); }
   else if (a === "period") setPeriod(b.dataset.p);
   else if (a === "tab") setTab(b.dataset.t);
+  else if (a === "page") { const l = $(`#snav a[data-nav="${b.dataset.p}"]`); if (l) l.click(); }   // phone tab bar -> a side page (side.js routes it)
   else if (a === "chpw") changePw();
   else if (a === "mfa") mfaManage();
   else if (a === "pernext") { const o = Object.keys(PER); setPeriod(o[(o.indexOf(STATE.period) + 1) % o.length]); const nb = $('[data-act="pernext"]'); if (nb) nb.focus(); }

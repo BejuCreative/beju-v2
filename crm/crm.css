@@ -1079,3 +1079,39 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 /* Desktop (BENAS 11-21 17:3x): no category tab bar. The dashboard stays one clean page; the stats-only cards
    (data-stat) are off it until the dashboard redesign. Phones keep their own tabs. */
 @media (min-width:601px){ .card[data-stat]{display:none} }
+
+/* ======================================================================
+   Phone pass 11-21 (SIMAS "optimise the crm for phone use and fix the layouts"; BENAS "we will also use this on our mobiles").
+   Layout only: every card shows the same things; only its place, size and spacing change. Desktop is untouched.
+   ====================================================================== */
+@media (max-width:600px){
+  /* phone home (BENAS): Do next, replies waiting, hot leads and the pipeline first; the $ hero under them, then the rest */
+  .top{margin-left:0;margin-right:0}
+  html[data-tab="home"] .app{display:flex;flex-direction:column}
+  html[data-tab="home"] #grid{display:contents}
+  html[data-tab="home"] #grid>.card{order:6}
+  html[data-tab="home"] #grid>#c-next{order:1}
+  html[data-tab="home"] #grid>#c-attention{order:2;display:block}
+  html[data-tab="home"] #grid>#c-hot{order:3}
+  html[data-tab="home"] #grid>#c-pipeline{order:4;display:block}
+  html[data-tab="home"] .app>.hero{order:5}
+  html[data-tab="home"] .app>.zone-h,html[data-tab="home"] .app>#grid2,html[data-tab="home"] .app>.foot{order:7}
+  /* hero numbers: a 3-up and a 2-up grid instead of sideways strips that hid the last numbers off screen */
+  .hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;margin:0;padding:0}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin:8px 0 0;padding:0}
+  .hero-facts>*,.kpis>*{flex:none}
+  .hf>span,.kpi>span{white-space:normal}
+  /* Calm motion: the activity ticker stays one swipeable line instead of a 12-row list */
+  html[data-motion="calm"] .ticker{overflow-x:auto;scrollbar-width:none}
+  html[data-motion="calm"] .ticker::-webkit-scrollbar{display:none}
+  html[data-motion="calm"] .ticker-t{flex-wrap:nowrap;white-space:nowrap}
+  @media (prefers-reduced-motion:reduce){.ticker{overflow-x:auto;scrollbar-width:none} .ticker-t{flex-wrap:nowrap;white-space:nowrap}}
+  /* tab bar: solid enough that page text doesn't show through */
+  .tabs{background:var(--solid);background:color-mix(in srgb,var(--solid) 94%,transparent)}
+  /* on a side page no dashboard tab is "on"; the Clients tab is on while the Clients page is open */
+  html.paged .tabs button.on{color:var(--mute);background:none}
+  html.paged:root .tabs button.on svg{stroke:currentColor}
+  html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"]{color:var(--ink);background:var(--panel)}
+  html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"] svg{stroke:var(--key)}
+  :root[data-mode="light"].paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"] svg{stroke:var(--blue)}
+}

@@ -39,8 +39,8 @@ html.sn-m .grid{--cols:1}
 @media (min-width:918px){html.sn-m .grid{--cols:3}}
 @media (min-width:1178px){html.sn-m .grid{--cols:4}}
 @media (min-width:1458px){html.sn-m .grid{--cols:5}}
-@media (max-width:1358px){html.sn-x .hero-top{grid-template-columns:1fr;gap:16px}}
-@media (max-width:1178px){html.sn-m .hero-top{grid-template-columns:1fr;gap:16px}}
+@media (max-width:1358px){html.sn-x .hero-top{grid-template-columns:minmax(0,1fr);gap:16px}}
+@media (max-width:1178px){html.sn-m .hero-top{grid-template-columns:minmax(0,1fr);gap:16px}}
 html.wall .snav{display:none}
 html.wall.sn-x .app,html.wall.sn-m .app{padding-left:28px}
 
