@@ -105,3 +105,16 @@ Both open in the drill-down sheet, with a search box (filters as you type) and t
 - `pipeline.source` and `pipeline.campaign` are empty, so there is no "which lane buys" card yet.
 - Chart marks narrower than 44px on a phone (8-week mini bars, inbox bars, mood segments) keep their size; the number or legend row beside each opens the same list.
 - A few synced message bodies arrive HTML-escaped (`&#x27;`); the page decodes them for display. The stored text is unchanged.
+
+## v7 (2026-11-21, Simas: tracking check, minimal screens, Leads, opportunities, big tasks)
+
+- **Positive replies are counted per lead.** `campaign_daily.opportunities` (Instantly's daily "unique opportunities") counts a lead again on every day it is active, so sums over several days ran up to 1.9× too high. `crm.js` (after `fetchAll`) and `side.js` (`fixOpp`) now take each day's positives from `interested_leads` (one row per lead, the day it was marked interested). All-time totals match Instantly.
+- **Paused campaigns stay in `campaign_live`.** The cloud job writes active campaigns only; `scripts/crm_panels_sync.py campaigns_paused()` (Dashboard repo, every 15 min) writes the paused and finished ones, with `updated_at` 6 hours old so the dashboard still reads them as not live.
+- **Dashboard: Focus / Everything** (switch above the cards, saved per device as `beju-crm-focus`, desktop only). Focus shows eight cards: Do next, Today, Opportunities, Hot leads, On hold, In production, Follow-ups, Retainers.
+- **Opportunities** (`public.opportunities`, `supabase/crm_v7.sql`): bigger work than Shorts. Card on the dashboard (read-only); add, change stage and close on the Leads page.
+- **Leads page (`?p=leads`)**: who needs action, by stage and owner; a row opens the conversation; the pencil changes the follow-up stage and note (`pipeline.fu_stage`, `fu_day0`, `fu_note`, the same fields `crm.py set_stage` writes; "parked" sets day0 30 days ahead) or adds a big task for that lead.
+- **To-dos: Big tasks** on top (`todo_cards.big`), written by the founders; a tick marks one done. "Promised to clients" folds away unless something is overdue.
+- **Email tests**: green = testing all variants (A and B both sending), purple = one variant only, gold = the winner (best positive rate among campaigns with 100+ leads contacted and at least 2%, all time). The per-campaign A/B detail folds away unless a test needs a founder.
+- **Weekly analysis**: winner of the week (28-day positive rate, 100+ new leads, 2%+), biggest moves, three actions; the eight detail sections fold. MRR and renewals appear once (Clients), "Do next" once (top).
+- **Client performance**: a client who posts no Shorts now shows their latest posts (long videos, photo posts) with views or likes. The numbers scan once a day (`crm_panels_sync.py` → `client_metrics.scan()`), plus the Sunday review.
+- **Type floor**: nothing under 13 px; reading text 15–16 px; 44 px tap targets on phones (end of `side.css`).
