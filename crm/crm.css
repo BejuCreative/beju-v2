@@ -1157,3 +1157,95 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
   .chart-card .ch>.xp{grid-column:2;grid-row:1}
   .chart-card .ch>.cx{grid-column:1/-1;grid-row:2;justify-content:flex-start;white-space:normal}
 }
+
+/* phone text (BENAS 11-21: 13 px minimum everywhere, 15 px body; wrap, don't shrink). Same selectors as the rules
+   that set the smaller sizes (listed from this file), so each one wins on phones only. */
+@media (max-width:600px){
+  body{font-size:15px}
+  .row-main b,.dr-txt,.dr-sum .dt-v,.cv-t,.note,.msg,.kv,.res button,.pal-i,.nt-x .dr-txt,.ccall .dr-txt{font-size:15px}
+  .empty,.tbl,.row-end{font-size:14px}
+  .kbd,.grp:has(+.stack>.tile.row>.kbd),.stack:has(>.tile.row>.kbd){display:none}   /* keyboard hints + the Shortcuts list: no keys on a phone */
+  .tabs i,.nt-n{font-size:13px;line-height:20px;height:20px;min-width:20px}
+  small{font-size:max(13px,.85em)}   /* plain <small> = the browser's "smaller" (10.8 px under 13 px text) */
+  .brandrow small{font-size:13px}
+  .fld{font-size:13px}
+  .cx{font-size:13px}
+  .sub{font-size:13px}
+  .chip{font-size:13px}
+  .delta{font-size:13px}
+  .more{font-size:13px}
+  .live{font-size:13px}
+  .brand-me{font-size:13px}
+  .row-main small{font-size:13px}
+  .row-end small{font-size:13px}
+  .av{font-size:13px}
+  .names button{font-size:13px}
+  .trio span{font-size:13px}
+  .legend .lg em{font-size:13px}
+  .wkl{font-size:13px}
+  .fun .fl{font-size:13px}
+  .ring-mid small{font-size:13px}
+  .lgd{font-size:13px}
+  .rng button{font-size:13px}
+  .tip{font-size:13px}
+  .xl{font-size:13px}
+  .days small{font-size:13px}
+  .res button span:last-child{font-size:13px}
+  .offline{font-size:13px}
+  .dr-sec h3{font-size:13px}
+  .note small{font-size:13px}
+  .msg small{font-size:13px}
+  .stack>.mut{font-size:13px}
+  .stat{font-size:13px}
+  .hf>span{font-size:13px}
+  .kpi>span{font-size:13px}
+  .kpi b small{font-size:13px}
+  .tk{font-size:13px}
+  .ticker-t span{font-size:13px}
+  .ticker-t span em{font-size:13px}
+  .tbl th{font-size:13px}
+  .grp{font-size:13px}
+  .dlg .sees small{font-size:13px}
+  .fe-m small{font-size:13px}
+  .fe time{font-size:13px}
+  .heat small{font-size:13px}
+  .heat-l{font-size:13px}
+  .clock-mid small{font-size:13px}
+  .sc-l{font-size:13px}
+  .rev .lab{font-size:13px}
+  .pt-lines{font-size:13px}
+  .due{font-size:13px}
+  .pal-g{font-size:13px}
+  .pal-i small{font-size:13px}
+  .toast small{font-size:13px}
+  .lgt{font-size:13px}
+  .sortb{font-size:13px}
+  .cx button.lk{font-size:13px}
+  .seg.per button{font-size:13px}
+  .kpi b .dl,.dl{font-size:13px}
+  .ticker-t button{font-size:13px}
+  .ticker-t button em{font-size:13px}
+  .chip.cvn{font-size:13px}
+  .dr-navr{font-size:13px}
+  .cv-sum{font-size:13px}
+  .cv-day{font-size:13px}
+  .cv-subj{font-size:13px}
+  .cv-meta{font-size:13px}
+  .cv-m .lk{font-size:13px}
+  .brandrow .bt small{font-size:13px}
+  .tabs button{font-size:13px}
+  .ownr button{font-size:13px}
+  .thp small{font-size:13px}
+  .swrow small{font-size:13px}
+  .big .dl{font-size:13px}
+  .nt .row-end{font-size:13px}
+  .cc-h small{font-size:13px}
+  .cc-l{font-size:13px}
+  .ct-m{font-size:13px}
+  .cc-miss{font-size:13px}
+  .cc-rec{font-size:13px}
+  .dr-sum .dt-l{font-size:13px}
+  .dr-sum .dt-v small{font-size:13px}
+  /* taps: 44 px */
+  .pal-in input{min-height:44px}
+}
