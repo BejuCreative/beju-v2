@@ -728,3 +728,4 @@ details.ab-fold>summary::after{content:"Show";font-size:13.5px;font-weight:600;c
 .ab-badge,.ab-badge.e{font-size:13px} .wbr-fs .avg4,.wbr-fs .cv{font-size:13.5px}
 .sd-pr .sd-pc{overflow:hidden} .sd-pc .tt{font-size:14.5px;overflow-wrap:anywhere}
 .app .seg button,.hero .seg.per button{font-size:13.5px} .hero .tk{font-size:13px} .card p.src,.spage p.src,p.foot{font-size:13px} .sortb,.heatd,.ch .cx .lk,.cl-fb span,.ex-acts .act,.ex-grp h2 small,.ex-amt em{font-size:13px} .kbd{font-size:13px}
+.hero .src,.hero [class*="src"]{font-size:13px} .app .act{font-size:13.5px} .kpi small,.kpi .dl,.kpi b small{font-size:13px} .app .dl{font-size:13px}
