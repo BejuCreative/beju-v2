@@ -8,15 +8,28 @@
 //   body:    {"action": "<name>", "args": {...}}
 //
 // Deployed with verify_jwt = false: the x-api-key check below IS the authentication.
+//
+// v2 (11-21): keys can expire (api_keys.expires_at); 60 calls a minute per key (429); every write carries headers
+// x-actor = <key name> and x-source = api, so public.audit_log records who changed what; writes that change an existing
+// row (prod moving a row, close, lift, task_done) take optional args.if_updated_at = the updated_at you read: if the row
+// changed since, the answer is HTTP 409 {error: "changed since you read it", current}. New actions: touch, timeline,
+// stage, inbox.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const FU_STAGES = ["asked_price", "sample_sent", "said_yes", "thinking", "parked", "none"];       // crm.py FU_STAGES
 const DESK_STAGES = ["queued", "building", "review", "founder_check", "client_check", "ready"];  // crm_desk.py STAGES
 const WHO = ["Simas", "Benas", "Both"];
+const TOUCH_KINDS = ["call", "meeting", "email", "dm", "loom", "delivery", "decision", "note", "other"];   // touches.kind check
+const PER_MINUTE = 60;
+// One client per request, so PostgREST sees who is writing (public.crm_actor() / audit_log read these headers).
+const dbFor = (actor: string) => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  { global: { headers: { "x-actor": actor, "x-source": "api" } }, auth: { persistSession: false } });
+type DB = ReturnType<typeof dbFor>;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 class Bad extends Error { constructor(public status: number, msg: string) { super(msg); } }
+class Changed extends Bad { constructor(public current: unknown) { super(409, "changed since you read it"); } }
 const bad = (msg: string): never => { throw new Bad(400, msg); };
 const json = (status: number, obj: unknown) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
@@ -76,20 +89,52 @@ function vilnius(a: any, k: string): string | null {
   for (let i = 0; i < 2; i++) utc = wall - offsetMin(utc) * 60000;
   return new Date(utc).toISOString();
 }
+// Vilnius "YYYY-MM-DD HH:MM" (like every other time arg here) or an ISO time with a zone.
+function when(a: any, k: string): string | null {
+  const v = str(a, k, { max: 40 });
+  if (v === null) return null;
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}$/.test(v)) return vilnius(a, k);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/.test(v) && !isNaN(Date.parse(v))) return new Date(Date.parse(v)).toISOString();
+  return bad(`${k} must be "YYYY-MM-DD HH:MM" (Vilnius time) or an ISO time with a zone`);
+}
+// Optimistic lock: the [ms, ms+1) window matches the stored microsecond value whether the caller sends it back exactly
+// or rounded to milliseconds by a JS Date.
+function ifUpdated(a: any): [string, string] | null {
+  const v = str(a, "if_updated_at", { max: 40 });
+  if (v === null) return null;
+  const t = Date.parse(v);
+  if (isNaN(t)) bad("if_updated_at must be the updated_at value you read (ISO time)");
+  return [new Date(t).toISOString(), new Date(t + 1).toISOString()];
+}
+const sameStamp = (u: string | null, ifu: [string, string]) => !!u && Date.parse(u) === Date.parse(ifu[0]);   // same millisecond
+function limitArg(a: any, dflt: number, max: number) {
+  if (a?.limit === undefined || a?.limit === null || a?.limit === "") return dflt;
+  const n = Number(a.limit);
+  if (!Number.isInteger(n) || n < 1 || n > max) bad(`limit must be a whole number from 1 to ${max}`);
+  return n;
+}
 async function must<T = any>(p: PromiseLike<{ data: any; error: any }>): Promise<T> {
   const { data, error } = await p;
   if (error) throw new Bad(500, error.message);
   return data as T;
 }
-async function closeDesk(id: number, note: string, actor: string, kind: "hold" | "production") {
-  const rows = await must<any[]>(sb.from("desk_items")
+async function closeDesk(db: DB, id: number, note: string, actor: string, kind: "hold" | "production", ifu: [string, string] | null) {
+  let q = db.from("desk_items")
     .update({ status: "closed", closed_note: `${note} (${actor})`, closed_at: new Date().toISOString() })
-    .eq("id", id).eq("kind", kind).eq("status", "open").select());
-  if (!rows.length) throw new Bad(404, `no open ${kind} with id ${id}`);
+    .eq("id", id).eq("kind", kind).eq("status", "open");
+  if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+  const rows = await must<any[]>(q.select());
+  if (!rows.length) {
+    if (ifu) {
+      const cur = await must<any[]>(db.from("desk_items").select("*").eq("id", id).eq("kind", kind).limit(1));
+      if (cur.length && !sameStamp(cur[0].updated_at, ifu)) throw new Changed(cur[0]);
+    }
+    throw new Bad(404, `no open ${kind} with id ${id}`);
+  }
   return rows[0];
 }
 
-const ACTIONS: Record<string, (a: any, actor: string) => Promise<unknown>> = {
+const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown>> = {
   // ---- reads
   async lead(a) {   // {email}: the lead's pipeline row + any open hold on that address
     const e = email(a, "email")!;
@@ -109,25 +154,25 @@ const ACTIONS: Record<string, (a: any, actor: string) => Promise<unknown>> = {
     return await must(sb.from("founder_tasks").select("*").is("done_at", null).order("due_at", { ascending: true, nullsFirst: false }).order("id"));
   },
   // ---- follow-up stage (crm.py set_stage)
-  async set_stage(a) {   // {lead, stage, day0?: "YYYY-MM-DD HH:MM", note?}
+  async set_stage(a, _actor, db) {   // {lead, stage, day0?: "YYYY-MM-DD HH:MM", note?}
     const e = email(a, "lead")!;
     const stage = oneOf(str(a, "stage", { req: true, max: 20 }), FU_STAGES, "stage")!;
     const body: Record<string, unknown> = { fu_stage: stage, fu_day0: stage === "none" ? null : (vilnius(a, "day0") ?? new Date().toISOString()) };
     const note = str(a, "note", { max: 1000 });
     if (note !== null) body.fu_note = note;
-    const rows = await must<any[]>(sb.from("pipeline").update(body).eq("email", e).select("email,fu_stage,fu_day0,fu_note"));
+    const rows = await must<any[]>(db.from("pipeline").update(body).eq("email", e).select("email,fu_stage,fu_day0,fu_note"));
     if (!rows.length) throw new Bad(404, `no pipeline row for ${e}`);
     return rows[0];
   },
   // ---- desk (crm_desk.py)
-  async hold(a, actor) {   // {client, rule, by: Simas|Benas|Both, emails?, detail?}
+  async hold(a, actor, db) {   // {client, rule, by: Simas|Benas|Both, emails?, detail?}
     const body = { kind: "hold", client: str(a, "client", { req: true, max: 200 }), title: str(a, "rule", { req: true, max: 1000 }),
       detail: str(a, "detail", { max: 2000 }), emails: emails(a) ?? [], set_by: oneOf(str(a, "by", { req: true, max: 10 }), WHO, "by"), created_by: actor };
-    return (await must<any[]>(sb.from("desk_items").insert(body).select()))[0];
+    return (await must<any[]>(db.from("desk_items").insert(body).select()))[0];
   },
-  async lift(a, actor) { return await closeDesk(intId(a), str(a, "why", { req: true, max: 500 })!, actor, "hold"); },         // {id, why}
-  async close(a, actor) { return await closeDesk(intId(a), str(a, "note", { req: true, max: 500 })!, actor, "production"); },  // {id, note}
-  async prod(a, actor) {   // {client, title, stage, builder?, link?, detail?, waits?, emails?}: add, or move the open row with the same client + title
+  async lift(a, actor, db) { return await closeDesk(db, intId(a), str(a, "why", { req: true, max: 500 })!, actor, "hold", ifUpdated(a)); },         // {id, why, if_updated_at?}
+  async close(a, actor, db) { return await closeDesk(db, intId(a), str(a, "note", { req: true, max: 500 })!, actor, "production", ifUpdated(a)); },  // {id, note, if_updated_at?}
+  async prod(a, actor, db) {   // {client, title, stage, builder?, link?, detail?, waits?, emails?, if_updated_at?}: add, or move the open row with the same client + title
     const client = str(a, "client", { req: true, max: 200 })!, title = str(a, "title", { req: true, max: 300 })!;
     const body: Record<string, unknown> = { stage: oneOf(str(a, "stage", { req: true, max: 20 }), DESK_STAGES, "stage") };
     for (const [k, max] of [["builder", 100], ["link", 1000], ["detail", 2000]] as const) { const v = str(a, k, { max }); if (v !== null) body[k] = v; }
@@ -135,21 +180,76 @@ const ACTIONS: Record<string, (a: any, actor: string) => Promise<unknown>> = {
     if (waits !== null) body.set_by = waits;
     const em = emails(a);
     if (em) body.emails = em;
-    const open = await must<any[]>(sb.from("desk_items").select("id,client,title").eq("kind", "production").eq("status", "open"));
+    const ifu = ifUpdated(a);
+    const open = await must<any[]>(db.from("desk_items").select("id,client,title").eq("kind", "production").eq("status", "open"));
     const cur = open.find((x) => x.client.toLowerCase() === client.toLowerCase() && x.title.toLowerCase() === title.toLowerCase());
-    if (cur) return (await must<any[]>(sb.from("desk_items").update({ ...body, status: "open", closed_at: null }).eq("id", cur.id).select()))[0];
-    return (await must<any[]>(sb.from("desk_items").insert({ ...body, kind: "production", client, title, created_by: actor }).select()))[0];
+    if (cur) {
+      let q = db.from("desk_items").update({ ...body, status: "open", closed_at: null }).eq("id", cur.id);
+      if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+      const rows = await must<any[]>(q.select());
+      if (!rows.length) throw new Changed((await must<any[]>(db.from("desk_items").select("*").eq("id", cur.id).limit(1)))[0] ?? null);
+      return rows[0];
+    }
+    return (await must<any[]>(db.from("desk_items").insert({ ...body, kind: "production", client, title, created_by: actor }).select()))[0];
   },
   // ---- founder tasks (founder_tasks.py)
-  async task_add(a, actor) {   // {title, detail?, who?, lead?, due?: "YYYY-MM-DD HH:MM"}
+  async task_add(a, actor, db) {   // {title, detail?, who?, lead?, due?: "YYYY-MM-DD HH:MM"}
     const body = { title: str(a, "title", { req: true, max: 300 }), detail: str(a, "detail", { max: 2000 }), who: oneOf(str(a, "who", { max: 10 }), WHO, "who"),
       lead_email: email(a, "lead", false), created_by: actor, due_at: vilnius(a, "due") };
-    return (await must<any[]>(sb.from("founder_tasks").insert(body).select()))[0];
+    return (await must<any[]>(db.from("founder_tasks").insert(body).select()))[0];
   },
-  async task_done(a) {   // {id}
-    const rows = await must<any[]>(sb.from("founder_tasks").update({ done_at: new Date().toISOString() }).eq("id", intId(a)).is("done_at", null).select());
-    if (!rows.length) throw new Bad(404, "no open task with that id");
+  async task_done(a, _actor, db) {   // {id, if_updated_at?}
+    const id = intId(a), ifu = ifUpdated(a);
+    let q = db.from("founder_tasks").update({ done_at: new Date().toISOString() }).eq("id", id).is("done_at", null);
+    if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+    const rows = await must<any[]>(q.select());
+    if (!rows.length) {
+      if (ifu) {
+        const cur = await must<any[]>(db.from("founder_tasks").select("*").eq("id", id).limit(1));
+        if (cur.length && !sameStamp(cur[0].updated_at, ifu)) throw new Changed(cur[0]);
+      }
+      throw new Bad(404, "no open task with that id");
+    }
     return rows[0];
+  },
+  // ---- touchpoints (11-21): log a call / meeting / email / DM / decision with its next step, right after it happens
+  async touch(a, actor, db) {   // {lead, kind, summary, direction?, next_step?, next_at?, status?, scheduled_at?, source?, ref?}
+    const body = {
+      lead_email: email(a, "lead")!, kind: oneOf(str(a, "kind", { req: true, max: 20 }), TOUCH_KINDS, "kind")!,
+      summary: str(a, "summary", { req: true, max: 2000 })!,
+      direction: oneOf(str(a, "direction", { max: 10 }), ["in", "out", "internal"], "direction") ?? "out",
+      status: oneOf(str(a, "status", { max: 10 }), ["planned", "done", "canceled"], "status") ?? "done",
+      next_step: str(a, "next_step", { max: 1000 }), next_at: when(a, "next_at"), scheduled_at: when(a, "scheduled_at"),
+      source: str(a, "source", { max: 40 }), ref: str(a, "ref", { max: 500 }), actor,
+    };
+    if (body.status === "planned" && !body.scheduled_at) bad("a planned touch needs scheduled_at (when it will happen)");
+    const ins = await db.from("touches").insert(body).select();
+    if (!ins.error) return { touch: ins.data![0], deduped: false };
+    if (ins.error.code !== "23505" || !body.ref) throw new Bad(500, ins.error.message);
+    // same lead + ref = the same touch: never logged twice. A planned one logged again as done / canceled is completed.
+    const ex = (await must<any[]>(db.from("touches").select("*").eq("lead_email", body.lead_email).eq("ref", body.ref).limit(1)))[0];
+    if (!ex) throw new Bad(409, "a touch with this ref already exists for this lead");
+    if (ex.status === "planned" && body.status !== "planned") {
+      const up = await must<any[]>(db.from("touches").update({ status: body.status, summary: body.summary, next_step: body.next_step,
+        next_at: body.next_at }).eq("id", ex.id).eq("status", "planned").select());
+      if (up.length) return { touch: up[0], deduped: false, completed: true };
+    }
+    return { touch: ex, deduped: true };
+  },
+  async timeline(a, _actor, db) {   // {email, limit?}: every touchpoint of the lead, newest first
+    return await must(db.from("lead_timeline").select("*").eq("email", email(a, "email")!).order("at", { ascending: false }).limit(limitArg(a, 50, 200)));
+  },
+  async stage(a, _actor, db) {   // {email}: the evidence-based deal stage + the one next step
+    const e = email(a, "email")!;
+    const [st, nx] = await Promise.all([
+      must<any[]>(db.from("lead_stage").select("*").eq("email", e).limit(1)),
+      must<any[]>(db.from("lead_next_step").select("*").eq("email", e).limit(1)),
+    ]);
+    return { stage: st[0] ?? null, next: nx[0] ?? null };
+  },
+  async inbox(a, _actor, db) {   // {limit?}: newest CRM notifications (public.crm_events)
+    return await must(db.from("crm_events").select("id,at,kind,severity,title,body,lead_email,link,source,actor")
+      .order("at", { ascending: false }).order("id", { ascending: false }).limit(limitArg(a, 30, 200)));
   },
 };
 
@@ -166,9 +266,14 @@ Deno.serve(async (req) => {
   let caller: { id: string; name: string; actions: string[] } | null = null, action = "", args: any = {};
   try {
     if (key.length < 20 || key.length > 200) throw new Bad(401, "missing or bad x-api-key");
-    const k = await must<any[]>(sb.from("api_keys").select("id,name,actions,revoked_at").eq("key_hash", await sha256hex(key)).limit(1));
+    const k = await must<any[]>(sb.from("api_keys").select("id,name,actions,revoked_at,expires_at").eq("key_hash", await sha256hex(key)).limit(1));
     if (!k.length || k[0].revoked_at) throw new Bad(401, "unknown or revoked key");
+    if (k[0].expires_at && Date.parse(k[0].expires_at) <= Date.now()) throw new Bad(401, "key expired");
     caller = k[0];
+    const { count, error: cErr } = await sb.from("api_log").select("id", { count: "exact", head: true })
+      .eq("key_name", caller!.name).gte("at", new Date(Date.now() - 60_000).toISOString());
+    if (cErr) throw new Bad(500, cErr.message);
+    if ((count ?? 0) >= PER_MINUTE) throw new Bad(429, `rate limit: at most ${PER_MINUTE} calls a minute per key`);
     let body: any;
     try { body = await req.json(); } catch { throw new Bad(400, 'body must be JSON: {"action": "...", "args": {...}}'); }
     action = String(body?.action ?? "");
@@ -176,7 +281,7 @@ Deno.serve(async (req) => {
     if (typeof args !== "object" || Array.isArray(args)) throw new Bad(400, "args must be an object");
     if (!Object.hasOwn(ACTIONS, action)) throw new Bad(400, `unknown action; known: ${Object.keys(ACTIONS).join(", ")}`);
     if (!caller!.actions.includes(action)) throw new Bad(403, `this key may not run ${action}`);
-    const result = await ACTIONS[action](args, caller!.name);
+    const result = await ACTIONS[action](args, caller!.name, dbFor(caller!.name));
     await log(caller!.name, action, args, true, 200, null);
     await sb.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", caller!.id);
     return json(200, { ok: true, result });
@@ -184,6 +289,7 @@ Deno.serve(async (req) => {
     const status = e instanceof Bad ? e.status : 500;
     const msg = e instanceof Error ? e.message : String(e);
     if (caller) await log(caller.name, action, args, false, status, msg);   // calls without a valid key are not logged (no table spam)
+    if (e instanceof Changed) return json(409, { ok: false, error: msg, current: e.current });
     return json(status, { ok: false, error: caller || status !== 500 ? msg : "server error" });
   }
 });
