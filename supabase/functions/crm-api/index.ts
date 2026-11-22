@@ -169,17 +169,17 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
     const [items, sync] = await Promise.all([must<any[]>(q), must<any[]>(sb.from("sync_status").select("ran_at,ok,max_age_min").eq("name", "replies").limit(1))]);
     // an empty list must never hide a dead sync: degraded = the replies sync failed or is older than its max_age_min
     const s = sync[0];
-    const degraded = !s || !s.ok || Date.now() - Date.parse(s.ran_at) > (s.max_age_min ?? 25) * 60_000;
+    const degraded = !s || !s.ok || !s.ran_at || Date.now() - Date.parse(s.ran_at) > (s.max_age_min ?? 25) * 60_000;
     return { as_of: s?.ran_at ?? null, degraded, count: items.length, items };
   },
   async health() {   // every sync_status row (cloud syncs + hb:<side>:<process> heartbeats): red = ok false, stale = older than max_age_min
     const rows = await must<any[]>(sb.from("sync_status").select("name,ok,ran_at,detail,max_age_min").order("name"));
     const now = Date.now(), out: Record<"red" | "stale" | "no_rule" | "green", unknown[]> = { red: [], stale: [], no_rule: [], green: [] };
     for (const r of rows) {
-      const age = now - Date.parse(r.ran_at);
-      const state = !r.ok ? "red" : r.max_age_min === null ? "no_rule" : age > r.max_age_min * 60_000 ? "stale" : "green";
+      const age = r.ran_at ? now - Date.parse(r.ran_at) : NaN;   // never ran (null ran_at) = stale, not green
+      const state = !r.ok ? "red" : !r.ran_at ? "stale" : r.max_age_min === null ? "no_rule" : age > r.max_age_min * 60_000 ? "stale" : "green";
       if (state === "green") { out.green.push(r.name); continue; }
-      out[state].push({ name: r.name, age_min: Math.floor(age / 60_000), max_age_min: r.max_age_min,
+      out[state].push({ name: r.name, age_min: Number.isNaN(age) ? null : Math.floor(age / 60_000), max_age_min: r.max_age_min,
         detail: String(r.detail ?? "").replace(/[^\s@"'<>(),;:]+@[^\s@"'<>(),;:]+\.[a-z]{2,}/gi, "<email>").slice(0, 160) });
     }
     return { as_of: new Date(now).toISOString(), all_green: !out.red.length && !out.stale.length, ...out };
