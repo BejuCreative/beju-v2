@@ -14,6 +14,10 @@
 // row (prod moving a row, close, lift, task_done) take optional args.if_updated_at = the updated_at you read: if the row
 // changed since, the answer is HTTP 409 {error: "changed since you read it", current}. New actions: touch, timeline,
 // stage, inbox.
+//
+// v12 (11-22, pack 1, needs supabase/crm_api_pack1.sql): reads `unhandled` (replies waiting on us, view public.unhandled)
+// and `health` (every sync_status row + heartbeats: red / stale / green); write `beat` (heartbeat row hb:<side>:<name>, where
+// <side> comes from the key's name, so a key can only beat for its own side).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -156,6 +160,41 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
   async todo() {   // 11-22 (BENAS "the to-do list is not being changed"): the ONE open list the To-dos board shows = public.task_queue
     // (every open task incl. reply tasks + open promises + approvals; snoozed / lost leads hidden). `tasks` stays for old callers.
     return await must(sb.from("task_queue").select("*").order("due_at", { ascending: true, nullsFirst: false }).order("created_at"));
+  },
+  // ---- pack 1 (11-22, crm_api_pack1.sql): one shared answer per question; crm.py reads the same view and table
+  async unhandled(a) {   // {side?: Simas|Benas}: real replies waiting on us (public.unhandled, built on reply_wait()); side adds "Both"
+    const side = oneOf(str(a, "side", { max: 10 }), ["Simas", "Benas"], "side");
+    let q = sb.from("unhandled").select("*").order("received_at");
+    if (side) q = q.in("side", [side, "Both"]);
+    const [items, sync] = await Promise.all([must<any[]>(q), must<any[]>(sb.from("sync_status").select("ran_at,ok,max_age_min").eq("name", "replies").limit(1))]);
+    // an empty list must never hide a dead sync: degraded = the replies sync failed or is older than its max_age_min
+    const s = sync[0];
+    const degraded = !s || !s.ok || Date.now() - Date.parse(s.ran_at) > (s.max_age_min ?? 25) * 60_000;
+    return { as_of: s?.ran_at ?? null, degraded, count: items.length, items };
+  },
+  async health() {   // every sync_status row (cloud syncs + hb:<side>:<process> heartbeats): red = ok false, stale = older than max_age_min
+    const rows = await must<any[]>(sb.from("sync_status").select("name,ok,ran_at,detail,max_age_min").order("name"));
+    const now = Date.now(), out: Record<"red" | "stale" | "no_rule" | "green", unknown[]> = { red: [], stale: [], no_rule: [], green: [] };
+    for (const r of rows) {
+      const age = now - Date.parse(r.ran_at);
+      const state = !r.ok ? "red" : r.max_age_min === null ? "no_rule" : age > r.max_age_min * 60_000 ? "stale" : "green";
+      if (state === "green") { out.green.push(r.name); continue; }
+      out[state].push({ name: r.name, age_min: Math.floor(age / 60_000), max_age_min: r.max_age_min,
+        detail: String(r.detail ?? "").replace(/[^\s@"'<>(),;:]+@[^\s@"'<>(),;:]+\.[a-z]{2,}/gi, "<email>").slice(0, 160) });
+    }
+    return { as_of: new Date(now).toISOString(), all_green: !out.red.length && !out.stale.length, ...out };
+  },
+  async beat(a, actor, db) {   // {name, ok?, detail?, max_age_min?: 1..10080, default 15}: upsert sync_status hb:<key's side>:<name>
+    const side = /^(simas|benas)-/.exec(actor)?.[1];
+    if (!side) throw new Bad(403, "this key has no side (its name must start with simas- or benas-)");
+    const name = str(a, "name", { req: true, max: 60 })!;
+    if (!/^[a-z0-9][a-z0-9_.:-]*$/i.test(name)) bad("name may use letters, digits and _ . : - only");
+    if (/^hb:/i.test(name)) bad("pass the process name only (e.g. alarms); hb:<side>: is added from your key");
+    if (a?.ok !== undefined && typeof a.ok !== "boolean") bad("ok must be true or false");
+    const max = a?.max_age_min === undefined || a?.max_age_min === null ? 15 : Number(a.max_age_min);
+    if (!Number.isInteger(max) || max < 1 || max > 10080) bad("max_age_min must be a whole number from 1 to 10080");
+    const row = { name: `hb:${side}:${name}`, ran_at: new Date().toISOString(), ok: a?.ok ?? true, detail: str(a, "detail", { max: 300 }), max_age_min: max };
+    return (await must<any[]>(db.from("sync_status").upsert(row, { onConflict: "name" }).select()))[0];
   },
   // ---- follow-up stage (crm.py set_stage)
   async set_stage(a, _actor, db) {   // {lead, stage, day0?: "YYYY-MM-DD HH:MM", note?}
