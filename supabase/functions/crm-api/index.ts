@@ -153,6 +153,10 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
   async tasks() {   // open founder tasks
     return await must(sb.from("founder_tasks").select("*").is("done_at", null).order("due_at", { ascending: true, nullsFirst: false }).order("id"));
   },
+  async todo() {   // 11-22 (BENAS "the to-do list is not being changed"): the ONE open list the To-dos board shows = public.task_queue
+    // (every open task incl. reply tasks + open promises + approvals; snoozed / lost leads hidden). `tasks` stays for old callers.
+    return await must(sb.from("task_queue").select("*").order("due_at", { ascending: true, nullsFirst: false }).order("created_at"));
+  },
   // ---- follow-up stage (crm.py set_stage)
   async set_stage(a, _actor, db) {   // {lead, stage, day0?: "YYYY-MM-DD HH:MM", note?}
     const e = email(a, "lead")!;
