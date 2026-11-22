@@ -131,3 +131,8 @@ alter view public.needs_attention set (security_invoker = on);
 -- Give a key the new actions (same pattern as crm_orders2.sql / crm_tasks_live1.sql):
 --   update public.api_keys set actions = array(select distinct unnest(actions || array['unhandled','health','beat']))
 --    where name = 'benas-claude';
+--
+-- Needs Benas's go (write action, 11-22): task_move moves a founder card on the To-dos board (owner / status / note), the same
+-- write as a drag on the board. No table change; only the two Claude keys get it:
+--   update public.api_keys set actions = array(select distinct unnest(actions || array['task_move']))
+--    where name in ('benas-claude', 'simas-claude');
