@@ -64,7 +64,9 @@ select d.e lead_email, d.offer_at, d.fus followups_done, d.fus + 1 followup_no, 
 from due d
 left join public.lead_stage ls on ls.email = d.e
 left join public.lead_flags f on f.email = d.e
-where now() >= d.due_at and d.due_at > now() - interval '7 days'
+where now() >= d.due_at
+  -- 7-day window counted from the later of the due date and the snooze end, so a snoozed lead comes back when it ends
+  and greatest(d.due_at, coalesce(f.snoozed_until, d.due_at)) > now() - interval '7 days'
   and coalesce(ls.stage, '') not in ('won', 'lost', 'parked')
   and f.lost_reason is null
   and (f.snoozed_until is null or f.snoozed_until <= now())
