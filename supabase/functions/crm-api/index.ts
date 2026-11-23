@@ -306,6 +306,67 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
     return await must(db.from("drafts").select("id,lead_email,inbox,category,status,created_by,created_at,decided_by,decided_at,sent_at,error")
       .order("created_at", { ascending: false }).limit(50));
   },
+  // ---- v12 (11-23, BENAS "everything instant, 100% accurate"): the Samples ledger + deliveries + board moves, CRM first.
+  // Same columns pipeline_write.py writes (sheet name -> pipeline column); the sheet copy stays the scripts' job.
+  async sample_set(a, actor, db) {   // {lead, status?, builder?, drive_link?, public_at?, delivered_at?, next_action?, next_action_at?, notes?, paid?, if_updated_at?}
+    const e = email(a, "lead")!;
+    const body: Record<string, unknown> = {};
+    const st = str(a, "status", { max: 20 });
+    if (st !== null) { if (!/^[A-Za-z0-9 _-]{2,20}$/.test(st)) bad("status must be 2-20 letters/digits (YES, CLAIMED, BUILT, PUBLIC, DELIVERED, ...)"); body.status = st.toUpperCase(); }
+    for (const [k, max] of [["builder", 100], ["drive_link", 1000], ["next_action", 500], ["notes", 2000], ["paid", 200]] as const) {
+      if (a?.[k] === "") body[k] = null; else { const v = str(a, k, { max }); if (v !== null) body[k] = v; }
+    }
+    for (const k of ["public_at", "delivered_at", "next_action_at"]) {
+      if (a?.[k] === "" || a?.[k] === null) { if (Object.hasOwn(a, k)) body[k] = null; } else { const v = vilnius(a, k); if (v !== null) body[k] = v; }
+    }
+    if (body.status === "DELIVERED" && !Object.hasOwn(body, "delivered_at")) {
+      const cur = await must<any[]>(db.from("pipeline").select("delivered_at").eq("email", e).limit(1));
+      if (cur.length && !cur[0].delivered_at) body.delivered_at = new Date().toISOString();
+    }
+    if (!Object.keys(body).length) bad("nothing to change: pass at least one field");
+    const ifu = ifUpdated(a);
+    let q = db.from("pipeline").update(body).eq("email", e);
+    if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+    const rows = await must<any[]>(q.select("email,status,builder,drive_link,public_at,delivered_at,next_action,next_action_at,paid,notes,updated_at"));
+    if (!rows.length) {
+      const cur = await must<any[]>(db.from("pipeline").select("*").eq("email", e).limit(1));
+      if (!cur.length) throw new Bad(404, `no pipeline row for ${e}`);
+      throw new Changed(cur[0]);
+    }
+    if (body.status) await db.from("stage_log").insert({ lead_email: e, to_status: body.status, actor });
+    return rows[0];
+  },
+  async delivery_add(a, _actor, db) {   // {id (Drive file id), title, link?, client_id?, order_name?, kind?, duration_s?, delivered_at?: "YYYY-MM-DD"}
+    const id = str(a, "id", { req: true, max: 200 })!;
+    if (!/^[A-Za-z0-9_-]{10,200}$/.test(id)) bad("id must be the Drive file id");
+    const body: Record<string, unknown> = { id, title: str(a, "title", { req: true, max: 300 }) };
+    for (const [k, max] of [["link", 1000], ["order_name", 300], ["kind", 40]] as const) { const v = str(a, k, { max }); if (v !== null) body[k] = v; }
+    const cid = str(a, "client_id", { max: 40 });
+    if (cid !== null) { if (!/^[0-9a-f-]{36}$/i.test(cid)) bad("client_id must be a uuid"); body.client_id = cid; }
+    if (a?.duration_s !== undefined) { const d = Number(a.duration_s); if (!Number.isInteger(d) || d < 0 || d > 36000) bad("duration_s must be whole seconds"); body.duration_s = d; }
+    const day = str(a, "delivered_at", { max: 10 });
+    if (day !== null) { if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) bad("delivered_at must be YYYY-MM-DD"); body.delivered_at = day; }
+    else body.delivered_at = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vilnius" });
+    return (await must<any[]>(db.from("deliveries").upsert(body, { onConflict: "id" }).select()))[0];
+  },
+  async task_move(a, _actor, db) {   // {id, status: todo|doing|waiting|fixing|done|dropped, owner?: Simas|Benas|Both, pos?, if_updated_at?}
+    const id = intId(a);
+    const body: Record<string, unknown> = { status: oneOf(str(a, "status", { req: true, max: 10 }), ["todo", "doing", "waiting", "fixing", "done", "dropped"], "status") };
+    const owner = oneOf(str(a, "owner", { max: 10 }), WHO, "owner");
+    if (owner !== null) body.owner = owner;
+    if (a?.pos !== undefined) { const p = Number(a.pos); if (!Number.isFinite(p)) bad("pos must be a number"); body.pos = p; }
+    body.done_at = body.status === "done" ? new Date().toISOString() : null;
+    const ifu = ifUpdated(a);
+    let q = db.from("tasks").update(body).eq("id", id);
+    if (ifu) q = q.gte("updated_at", ifu[0]).lt("updated_at", ifu[1]);
+    const rows = await must<any[]>(q.select("id,title,owner,status,pos,done_at,updated_at"));
+    if (!rows.length) {
+      const cur = await must<any[]>(db.from("tasks").select("*").eq("id", id).limit(1));
+      if (!cur.length) throw new Bad(404, "no task with that id");
+      throw new Changed(cur[0]);
+    }
+    return rows[0];
+  },
 };
 
 // The one Short a revision/posted fact is about: by order id, or by the client's exact name when only ONE order has that number.
