@@ -106,7 +106,7 @@ async function sendOne(d: any): Promise<string> {
 // ---- founder alerts in #red-alert. reminders: 0 = not posted yet, 1 = posted, 2 = 1-h nudge, 3 = 3-h nudge.
 const SLACK = Deno.env.get("SLACK_TOKEN") ?? "", RED_ALERT = "C0CHQ5LV7L4", CRM = "https://bejucreative.digital/crm/";
 const FOUNDERS = "<@U0C55SK8MN0> <@U0C528KBKKL>";
-const CAT: Record<string, string> = { big_deal: "Big deal / scope", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name (50k+)", other: "Needs a founder" };
+const CAT: Record<string, string> = { big_deal: "Big deal / scope", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name (50k+)", other: "Needs a founder", sample: "Sample delivery (Samples tab)" };
 const esc2 = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");   // Slack-safe text
 async function slack(text: string) {
   if (!SLACK) throw new Error("SLACK_TOKEN not set");
@@ -163,6 +163,9 @@ Deno.serve(async (req) => {
     done.push(r);
     await slack(`:warning: Draft #${x.id} to ${esc2(x.to_email)} from ${esc2(x.inbox)} was cut off mid-send; marked UNKNOWN (no resend). ${FOUNDERS} check Instantly, then close it in the CRM.`).catch(() => {});
   }
+  // 11-23 (SIMAS): a sample delivery email nobody sent, edited or sent back within 30 min is approved as it stands, then sent below
+  const { data: auto, error: aErr } = await sb.rpc("draft_auto_approve");
+  if (aErr) done.push("auto-approve failed: " + aErr.message.slice(0, 120)); else if (auto) done.push(`auto-approved ${auto}`);
   const { data: ready, error } = await sb.from("drafts").select("id").eq("status", "approved").order("decided_at").limit(2);
   if (error) return new Response(error.message, { status: 500 });
   for (const { id } of ready || []) {

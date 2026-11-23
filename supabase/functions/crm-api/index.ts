@@ -297,7 +297,7 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
       warnings.push("block: hard pass (the lead said a flat no; lane 0 = no reply)");
     const body = { lead_email: email(a, "lead")!, inbox, reply_to_id, to_email: email(a, "to")!, cc_list: cc,
       lead_last_snippet: str(a, "lead_last", { req: true, max: 1000 }),
-      category: oneOf(str(a, "category", { req: true, max: 20 }), ["big_deal", "client_problem", "new_terms", "big_name", "other"], "category"),
+      category: oneOf(str(a, "category", { req: true, max: 20 }), ["big_deal", "client_problem", "new_terms", "big_name", "other", "sample"], "category"),
       reason: str(a, "reason", { req: true, max: 500 }), warnings, body: str(a, "body", { req: true, max: 8000 })!, created_by: actor };
     return (await must<any[]>(db.from("drafts").insert(body).select("id,lead_email,inbox,to_email,cc_list,category,status,created_at")))[0];
   },
