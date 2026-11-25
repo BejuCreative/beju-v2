@@ -21,6 +21,7 @@ const FU_STAGES = ["asked_price", "sample_sent", "said_yes", "thinking", "parked
 const DESK_STAGES = ["queued", "building", "review", "founder_check", "client_check", "ready"];  // crm_desk.py STAGES
 const WHO = ["Simas", "Benas", "Both"];
 const TOUCH_KINDS = ["call", "meeting", "email", "dm", "loom", "delivery", "decision", "note", "other"];   // touches.kind check
+const APPROVERS = ["benas-claude", "simas-claude"];   // the two ops Claudes (approvals.requested_by)
 const PER_MINUTE = 60;
 // One client per request, so PostgREST sees who is writing (public.crm_actor() / audit_log read these headers).
 const dbFor = (actor: string) => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -305,6 +306,78 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
     if (!a?.all) return await must(db.from("drafts_waiting").select("*"));
     return await must(db.from("drafts").select("id,lead_email,inbox,category,status,created_by,created_at,decided_by,decided_at,sent_at,error")
       .order("created_at", { ascending: false }).limit(50));
+  },
+  // ---- the one approvals queue (crm_approvals1.sql; BENAS 11-25): either Claude asks for an OK, either founder decides in the CRM
+  // Approvals tab, the asking Claude reads the answer (approval_get / approvals) and acts, then marks it done. A Claude can never
+  // decide: founders answer through approval_decide() in the CRM (2-step login). Only the two ops Claudes' keys may ask.
+  async approval_add(a, actor, db) {   // {kind, title, why?, recommendation?, body?, lead?, client?, inbox?, draft_id?, links?, urgency?, needs_both?}
+    if (!APPROVERS.includes(actor)) throw new Bad(403, "only benas-claude and simas-claude can ask for an approval");
+    const kind = oneOf(str(a, "kind", { req: true, max: 10 }), ["email", "decision"], "kind")!;
+    const title = str(a, "title", { req: true, max: 200 })!;
+    const draft_id = a?.draft_id === undefined || a?.draft_id === null || a?.draft_id === "" ? null : intId(a, "draft_id");
+    const needs_both = a?.needs_both === true;
+    if (a?.needs_both !== undefined && typeof a.needs_both !== "boolean") bad("needs_both must be true or false");
+    if (draft_id !== null && kind !== "email") bad("draft_id goes with kind 'email'");
+    if (draft_id !== null && needs_both) bad("needs_both can't be used on an email draft: the draft flow takes one founder's approval");
+    const text = str(a, "body", { max: 8000 });
+    if (kind === "email" && !text && draft_id === null) bad("an email approval needs body (the exact text) or draft_id");
+    if (draft_id !== null) {
+      const d = await must<any[]>(db.from("drafts").select("id,lead_email,inbox,body,status").eq("id", draft_id).limit(1));
+      if (!d.length) throw new Bad(404, `no draft ${draft_id}`);
+      if (!["pending", "held"].includes(d[0].status)) bad(`draft ${draft_id} is ${d[0].status}: it is not waiting for a founder`);
+    }
+    let links: { label: string; url: string }[] = [];
+    if (a?.links !== undefined && a?.links !== null) {
+      if (!Array.isArray(a.links) || a.links.length > 10) bad("links must be a list of at most 10");
+      links = a.links.map((l: any) => {
+        const url = String(typeof l === "string" ? l : l?.url ?? "").trim(), label = String(typeof l === "string" ? "" : l?.label ?? "").trim().slice(0, 80);
+        if (!/^https:\/\/[^\s]+$/.test(url) || url.length > 500) bad("each link needs an https:// url");
+        return { label: label || url.replace(/^https:\/\//, "").slice(0, 60), url };
+      });
+    }
+    const row = { kind, title, why: str(a, "why", { max: 2000 }), recommendation: str(a, "recommendation", { max: 2000 }), body: text,
+      lead_email: email(a, "lead", false), client_name: str(a, "client", { max: 200 }), inbox: email(a, "inbox", false), draft_id, links,
+      requested_by: actor, urgency: oneOf(str(a, "urgency", { max: 10 }), ["money", "client", "routine"], "urgency") ?? "routine", needs_both };
+    // a retry of the same ask returns the open one instead of a second card
+    const open = await must<any[]>(db.from("approvals").select("*").eq("requested_by", actor).eq("title", title).in("status", ["pending", "held"]).limit(1));
+    if (open.length) return { ...open[0], duplicate: true };
+    return (await must<any[]>(db.from("approvals").insert(row).select()))[0];
+  },
+  async approvals(a, _actor, db) {   // {status?: pending|approved|rejected|held|done|cancelled|open (pending+held, the default)|all, since?, limit?}
+    const st = str(a, "status", { max: 12 }) ?? "open";
+    oneOf(st, ["pending", "approved", "rejected", "held", "done", "cancelled", "open", "all"], "status");
+    let q = db.from("approvals").select("*");
+    if (st === "open") q = q.in("status", ["pending", "held"]); else if (st !== "all") q = q.eq("status", st);
+    const since = when(a, "since"); if (since) q = q.gte("updated_at", since);
+    return await must(q.order("created_at", { ascending: false }).limit(limitArg(a, 50, 200)));
+  },
+  async approval_get(a, _actor, db) {   // {id}: one row, so a Claude can poll the answer
+    const rows = await must<any[]>(db.from("approvals").select("*").eq("id", intId(a)).limit(1));
+    if (!rows.length) throw new Bad(404, `no approval ${a.id}`);
+    return rows[0];
+  },
+  async approval_done(a, actor, db) {   // {id, note?}: the Claude acted on the founders' answer (approved or rejected) -> status 'done'
+    const id = intId(a), note = str(a, "note", { max: 500 });
+    const rows = await must<any[]>(db.from("approvals").select("id,status,note").eq("id", id).limit(1));
+    if (!rows.length) throw new Bad(404, `no approval ${id}`);
+    const cur = rows[0];
+    if (cur.status === "done") return (await must<any[]>(db.from("approvals").select("*").eq("id", id)))[0];   // idempotent
+    if (!["approved", "rejected"].includes(cur.status)) bad(`approval ${id} is ${cur.status}: mark it done only after a founder approved or rejected it`);
+    const merged = note ? `${cur.note ? cur.note + "\n" : ""}[done by ${actor}] ${note}`.slice(0, 2000) : cur.note;
+    const out = await must<any[]>(db.from("approvals").update({ status: "done", acted_at: new Date().toISOString(), note: merged }).eq("id", id).in("status", ["approved", "rejected"]).select());
+    if (!out.length) bad(`approval ${id} changed meanwhile: read it again`);
+    return out[0];
+  },
+  async approval_cancel(a, actor, db) {   // {id, note?}: the Claude no longer needs the answer (pending or held only)
+    const id = intId(a), note = str(a, "note", { max: 500 });
+    const rows = await must<any[]>(db.from("approvals").select("id,status,note").eq("id", id).limit(1));
+    if (!rows.length) throw new Bad(404, `no approval ${id}`);
+    if (rows[0].status === "cancelled") return (await must<any[]>(db.from("approvals").select("*").eq("id", id)))[0];
+    if (!["pending", "held"].includes(rows[0].status)) bad(`approval ${id} is ${rows[0].status}: only a waiting one can be cancelled`);
+    const merged = note ? `${rows[0].note ? rows[0].note + "\n" : ""}[cancelled by ${actor}] ${note}`.slice(0, 2000) : rows[0].note;
+    const out = await must<any[]>(db.from("approvals").update({ status: "cancelled", note: merged }).eq("id", id).in("status", ["pending", "held"]).select());
+    if (!out.length) bad(`approval ${id} changed meanwhile: read it again`);
+    return out[0];
   },
 };
 

@@ -21,6 +21,7 @@ const SUMMARY: Record<string, (n: number) => string> = {
   reply: (n) => `${n} new replies waiting`,
   sample_yes: (n) => `${n} new sample yeses`,
   client_changes: (n) => `${n} clients asked for changes`,
+  approval: (n) => `${n} things need your OK`,   // 11-25: crm_approvals1.sql (decisions + reply drafts waiting for a founder)
 };
 
 type Row = { id: number; event: string; ref: string; title: string; body: string; url: string; tag: string };
@@ -90,7 +91,7 @@ async function drain(): Promise<Record<string, number>> {
       const subs = await liveSubs(event);
       if (!subs.length) { await sb.from("push_outbox").update({ status: "skipped", detail: "no device has this event on" }).in("id", ids); stat.skipped += ids.length; continue; }
       const msgs: Msg[] = list.length > 3
-        ? [{ title: SUMMARY[event](list.length), body: "Tap to open the CRM", url: list[0].url.split("&")[0], tag: `${event}:summary`, event }]
+        ? [{ title: (SUMMARY[event] ?? ((n: number) => `${n} new alerts`))(list.length), body: "Tap to open the CRM", url: list[0].url.split("&")[0], tag: `${event}:summary`, event }]
         : list.map((r) => ({ title: r.title, body: r.body, url: r.url, tag: r.tag, event }));
       let ok = 0, fail = 0, last = "";
       for (const m of msgs) { const d = await deliver(subs, m); ok += d.ok; fail += d.fail + d.gone; if (d.last) last = d.last; }
