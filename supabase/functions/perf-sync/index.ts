@@ -1,4 +1,7 @@
-// Performance tab v2 — daily client numbers without the Mac (11-23). pg_cron 'perf-sync' calls it at 04:00 UTC with x-cron-secret.
+// Performance tab v2 — client numbers without the Mac (11-23). pg_cron 'perf-sync' calls it every 6 hours (0 */6 * * * UTC) with
+// x-cron-secret. Each run upserts TODAY's row (client_post_stats / channel_stats_daily), so the day's snapshot is refreshed 4x a day.
+// YouTube quota: every call here costs 1 unit (channels, playlistItems, videos); a run reports its count as yt_units (10,000 a day free).
+// Body {"skip_after": true} = refresh the numbers only, no perf_after_sync (no writes to our_posts / link_suggestions).
 // YouTube (official Data API, key = secret YOUTUBE_API_KEY): channel stats → channel_stats_daily; uploads of the last 120 days
 // (paged) → client_posts + client_post_stats (today); every YouTube id in our_posts re-read directly (50 per call) so old ours
 // keep updating; ids that vanished keep their last stats and get removed=true.
@@ -9,7 +12,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const YT = Deno.env.get("YOUTUBE_API_KEY") || "";
-const DAY = new Date().toISOString().slice(0, 10);
+let DAY = new Date().toISOString().slice(0, 10);   // set again on every request (a warm instance can outlive the day)
+let UNITS = 0;                                     // YouTube API calls of this run (1 quota unit each)
 const NOW = () => new Date().toISOString();
 
 function isoDur(s: string): number {
@@ -17,6 +21,7 @@ function isoDur(s: string): number {
   return (+(m[1] || 0)) * 86400 + (+(m[2] || 0)) * 3600 + (+(m[3] || 0)) * 60 + (+(m[4] || 0));
 }
 async function yt(path: string, p: Record<string, string>) {
+  UNITS++;
   const r = await fetch(`https://www.googleapis.com/youtube/v3/${path}?` + new URLSearchParams({ ...p, key: YT }));
   const j = await r.json();
   if (!r.ok) throw new Error(`YouTube ${path} ${r.status}: ${j?.error?.message ?? ""}`.slice(0, 200));
@@ -33,9 +38,11 @@ function postRow(v: any, email: string) {
   return { platform: "youtube", post_id: v.id, email, title: (v.snippet?.title || "").slice(0, 300),
     url: `https://www.youtube.com/${d <= 180 ? "shorts/" : "watch?v="}${v.id}`, posted_at: v.snippet?.publishedAt, duration_s: d,
     is_short: d <= 180, views: +(st.viewCount ?? 0), likes: st.likeCount != null ? +st.likeCount : null,
-    comments: st.commentCount != null ? +st.commentCount : null, removed: false, removed_at: null, updated_at: NOW() };
+    comments: st.commentCount != null ? +st.commentCount : null, removed: false, removed_at: null, updated_at: NOW(), source: "api" };
 }
-const statRow = (p: any) => ({ platform: p.platform, post_id: p.post_id, day: DAY, views: p.views, likes: p.likes, comments: p.comments });
+// 11-25: every snapshot row says where (source) and when (read_at) its numbers were read (docs/perf_1125/sources_1125.sql)
+const statRow = (p: any) => ({ platform: p.platform, post_id: p.post_id, day: DAY, views: p.views, likes: p.likes, comments: p.comments,
+  shares: p.shares ?? null, source: p.source ?? null, read_at: p.updated_at ?? NOW() });
 
 async function youtube() {
   const errs: string[] = []; let posts = 0;
@@ -53,7 +60,8 @@ async function youtube() {
       await up("channel_stats_daily", [{ client_email: a.email, platform: "youtube", day: DAY, followers: +(st.subscriberCount ?? 0),
         total_views: +(st.viewCount ?? 0), video_count: +(st.videoCount ?? 0) }], "client_email,platform,day");
       await sb.from("client_accounts").update({ followers: +(st.subscriberCount ?? 0), posts_count: +(st.videoCount ?? 0),
-        handle: ch.snippet?.customUrl ?? null, updated_at: NOW() }).eq("email", a.email).eq("platform", "youtube");
+        handle: ch.snippet?.customUrl ?? null, updated_at: NOW(), source: "api",
+        followers_rounded: +(st.subscriberCount ?? 0) >= 1000 }).eq("email", a.email).eq("platform", "youtube");   // YouTube rounds to 3 significant figures
       // uploads of the last 120 days, paged (the playlist is newest-first; stop once a page is entirely older)
       const ids: string[] = []; let tok = "";
       for (let page = 0; page < 40; page++) {
@@ -105,11 +113,11 @@ async function instagram() {
     const bd = j.business_discovery;
     await up("channel_stats_daily", [{ client_email: a.email, platform: "instagram", day: DAY, followers: bd.followers_count ?? null,
       total_views: null, video_count: bd.media_count ?? null }], "client_email,platform,day");
-    await sb.from("client_accounts").update({ followers: bd.followers_count, posts_count: bd.media_count, updated_at: NOW() })
+    await sb.from("client_accounts").update({ followers: bd.followers_count, posts_count: bd.media_count, updated_at: NOW(), source: "api", followers_rounded: false })
       .eq("email", a.email).eq("platform", "instagram");
     const rows = (bd.media?.data || []).map((m: any) => ({ platform: "instagram", post_id: m.id, email: a.email, url: m.permalink,
       title: (m.caption || "").slice(0, 300), posted_at: m.timestamp, is_short: m.media_product_type === "REELS", views: m.view_count ?? null,
-      likes: m.like_count ?? null, comments: m.comments_count ?? null, removed: false, updated_at: NOW() }));
+      likes: m.like_count ?? null, comments: m.comments_count ?? null, removed: false, updated_at: NOW(), source: "api" }));
     await up("client_posts", rows, "platform,post_id");
     await up("client_post_stats", rows.map(statRow), "platform,post_id,day");
     posts += rows.length;
@@ -129,14 +137,17 @@ async function health(platform: string, errs: string[], extra = "") {
 
 Deno.serve(async (req) => {
   if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return new Response("forbidden", { status: 403 });
+  DAY = new Date().toISOString().slice(0, 10); UNITS = 0;
+  const skipAfter = (await req.json().catch(() => ({})))?.skip_after === true;
   const out: any = {};
   try {
-    const y = await youtube(); out.youtube = y; await health("youtube", y.errs, `${y.posts} posts`);
+    const y = await youtube(); out.youtube = { ...y, units: UNITS }; await health("youtube", y.errs, `${y.posts} posts`);
     const i = await instagram(); out.instagram = i; if (!(i as any).skipped) await health("instagram", i.errs, `${i.posts} posts`);
-    const { data, error } = await sb.rpc("perf_after_sync"); out.after = error ? { error: error.message } : data;
+    const { data, error } = skipAfter ? { data: "skipped", error: null } : await sb.rpc("perf_after_sync");
+    out.after = error ? { error: error.message } : data;
     const ok = !y.errs.length && !error;
-    await up("sync_status", [{ name: "perf_sync", ran_at: NOW(), ok, detail: JSON.stringify({ yt: y.posts, yt_err: y.errs.length,
-      ig: i.posts, ig_err: i.errs[0] ?? null, after: out.after }).slice(0, 300), max_age_min: 1560 }], "name");
+    await up("sync_status", [{ name: "perf_sync", ran_at: NOW(), ok, detail: JSON.stringify({ yt: y.posts, yt_units: UNITS, yt_err: y.errs.length,
+      ig: i.posts, ig_err: i.errs[0] ?? null, after: out.after }).slice(0, 300), max_age_min: 450 }], "name");
     return new Response(JSON.stringify(out), { headers: { "Content-Type": "application/json" } });
   } catch (e) {
     await up("sync_status", [{ name: "perf_sync", ran_at: NOW(), ok: false, detail: String((e as Error).message).slice(0, 300) }], "name").catch(() => {});
