@@ -14,6 +14,13 @@
 // row (prod moving a row, close, lift, task_done) take optional args.if_updated_at = the updated_at you read: if the row
 // changed since, the answer is HTTP 409 {error: "changed since you read it", current}. New actions: touch, timeline,
 // stage, inbox.
+//
+// v12 (11-22, pack 1, needs supabase/crm_api_pack1.sql): reads `unhandled` (replies waiting on us, view public.unhandled)
+// and `health` (every sync_status row + heartbeats: red / stale / green); write `beat` (heartbeat row hb:<side>:<name>, where
+// <side> comes from the key's name, so a key can only beat for its own side).
+//
+// v12 + task_move (11-22, Benas's Claude ask: "when a founder tells his Claude to work on a To-dos card, the card moves by
+// itself"): write `task_move` = the same write as a drag on the live board (crm/side.js writeTask + mirror). Founder cards only.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -21,6 +28,8 @@ const FU_STAGES = ["asked_price", "sample_sent", "said_yes", "thinking", "parked
 const DESK_STAGES = ["queued", "building", "review", "founder_check", "client_check", "ready"];  // crm_desk.py STAGES
 const WHO = ["Simas", "Benas", "Both"];
 const TOUCH_KINDS = ["call", "meeting", "email", "dm", "loom", "delivery", "decision", "note", "other"];   // touches.kind check
+const BOARD_SRC = ["founder_tasks", "board", "deferred", "manual"];   // crm/side.js FSRC: the founder cards the To-dos board shows
+const BOARD_STATUS = ["todo", "doing", "waiting", "fixing", "done"];
 const PER_MINUTE = 60;
 // One client per request, so PostgREST sees who is writing (public.crm_actor() / audit_log read these headers).
 const dbFor = (actor: string) => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -107,6 +116,24 @@ function ifUpdated(a: any): [string, string] | null {
   return [new Date(t).toISOString(), new Date(t + 1).toISOString()];
 }
 const sameStamp = (u: string | null, ifu: [string, string]) => !!u && Date.parse(u) === Date.parse(ifu[0]);   // same millisecond
+// A note at the end of a card's details, in the board's fix-note format "— YYYY-MM-DD HH:MM <who>: <note>" (crm/side.js
+// FIXRE and the DB's task_last_fix_note read it). Over 4000 chars (tasks.detail max) the OLDEST notes go: the description
+// before the first note (max 1000 chars), a cut marker, then the newest old notes that fit, then the new note.
+const NOTE_START = /(?:^|\n)— \d{4}-\d{2}-\d{2} \d{2}:\d{2} /;
+function addNote(detail: string | null, who: string, note: string) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Vilnius", hourCycle: "h23", year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+  const add = `— ${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute} ${who.replace(/[:\n]/g, " ").trim()}: ${note}`;
+  const old = detail ?? "", full = old ? `${old}\n\n${add}` : add;
+  if (full.length <= 4000) return full;
+  const CUT = "[… older notes cut to fit 4000 characters …]", first = NOTE_START.exec(old);
+  const headEnd = Math.min(1000, first ? first.index : old.length), head = old.slice(0, headEnd).replace(CUT, "").trimEnd();   // one marker only
+  const room = 4000 - head.length - CUT.length - add.length - 6;
+  let tail = old.slice(Math.max(headEnd, old.length - room));
+  const b = NOTE_START.exec(tail);
+  if (b && b.index > 0) tail = tail.slice(b.index);   // start on a whole note
+  return [head, CUT, tail.trim(), add].filter(Boolean).join("\n\n");
+}
 function limitArg(a: any, dflt: number, max: number) {
   if (a?.limit === undefined || a?.limit === null || a?.limit === "") return dflt;
   const n = Number(a.limit);
@@ -156,6 +183,41 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
   async todo() {   // 11-22 (BENAS "the to-do list is not being changed"): the ONE open list the To-dos board shows = public.task_queue
     // (every open task incl. reply tasks + open promises + approvals; snoozed / lost leads hidden). `tasks` stays for old callers.
     return await must(sb.from("task_queue").select("*").order("due_at", { ascending: true, nullsFirst: false }).order("created_at"));
+  },
+  // ---- pack 1 (11-22, crm_api_pack1.sql): one shared answer per question; crm.py reads the same view and table
+  async unhandled(a) {   // {side?: Simas|Benas}: real replies waiting on us (public.unhandled, built on reply_wait()); side adds "Both"
+    const side = oneOf(str(a, "side", { max: 10 }), ["Simas", "Benas"], "side");
+    let q = sb.from("unhandled").select("*").order("received_at");
+    if (side) q = q.in("side", [side, "Both"]);
+    const [items, sync] = await Promise.all([must<any[]>(q), must<any[]>(sb.from("sync_status").select("ran_at,ok,max_age_min").eq("name", "replies").limit(1))]);
+    // an empty list must never hide a dead sync: degraded = the replies sync failed or is older than its max_age_min
+    const s = sync[0];
+    const degraded = !s || !s.ok || !s.ran_at || Date.now() - Date.parse(s.ran_at) > (s.max_age_min ?? 25) * 60_000;
+    return { as_of: s?.ran_at ?? null, degraded, count: items.length, items };
+  },
+  async health() {   // every sync_status row (cloud syncs + hb:<side>:<process> heartbeats): red = ok false, stale = older than max_age_min
+    const rows = await must<any[]>(sb.from("sync_status").select("name,ok,ran_at,detail,max_age_min").order("name"));
+    const now = Date.now(), out: Record<"red" | "stale" | "no_rule" | "green", unknown[]> = { red: [], stale: [], no_rule: [], green: [] };
+    for (const r of rows) {
+      const age = r.ran_at ? now - Date.parse(r.ran_at) : NaN;   // never ran (null ran_at) = stale, not green
+      const state = !r.ok ? "red" : !r.ran_at ? "stale" : r.max_age_min === null ? "no_rule" : age > r.max_age_min * 60_000 ? "stale" : "green";
+      if (state === "green") { out.green.push(r.name); continue; }
+      out[state].push({ name: r.name, age_min: Number.isNaN(age) ? null : Math.floor(age / 60_000), max_age_min: r.max_age_min,
+        detail: String(r.detail ?? "").replace(/[^\s@"'<>(),;:]+@[^\s@"'<>(),;:]+\.[a-z]{2,}/gi, "<email>").slice(0, 160) });
+    }
+    return { as_of: new Date(now).toISOString(), all_green: !out.red.length && !out.stale.length, ...out };
+  },
+  async beat(a, actor, db) {   // {name, ok?, detail?, max_age_min?: 1..10080, default 15}: upsert sync_status hb:<key's side>:<name>
+    const side = /^(simas|benas)-/.exec(actor)?.[1];
+    if (!side) throw new Bad(403, "this key has no side (its name must start with simas- or benas-)");
+    const name = str(a, "name", { req: true, max: 60 })!;
+    if (!/^[a-z0-9][a-z0-9_.:-]*$/i.test(name)) bad("name may use letters, digits and _ . : - only");
+    if (/^hb:/i.test(name)) bad("pass the process name only (e.g. alarms); hb:<side>: is added from your key");
+    if (a?.ok !== undefined && typeof a.ok !== "boolean") bad("ok must be true or false");
+    const max = a?.max_age_min === undefined || a?.max_age_min === null ? 15 : Number(a.max_age_min);
+    if (!Number.isInteger(max) || max < 1 || max > 10080) bad("max_age_min must be a whole number from 1 to 10080");
+    const row = { name: `hb:${side}:${name}`, ran_at: new Date().toISOString(), ok: a?.ok ?? true, detail: str(a, "detail", { max: 300 }), max_age_min: max };
+    return (await must<any[]>(db.from("sync_status").upsert(row, { onConflict: "name" }).select()))[0];
   },
   // ---- follow-up stage (crm.py set_stage)
   async set_stage(a, _actor, db) {   // {lead, stage, day0?: "YYYY-MM-DD HH:MM", note?}
@@ -215,6 +277,46 @@ const ACTIONS: Record<string, (a: any, actor: string, db: DB) => Promise<unknown
       throw new Bad(404, "no open task with that id");
     }
     return rows[0];
+  },
+  // ---- To-dos board move (11-22): the same write as a drag on the live board (crm/side.js writeTask + mirror). The old list's
+  // row (todo_cards / founder_tasks) is changed first, best effort; public.tasks is written LAST so it wins over that table's
+  // tasks_sync trigger. Realtime on tasks + todo_cards updates the open board. status 'fixing' fires the crm_fix ping, as on the board.
+  async task_move(a, actor, db) {   // {id (tasks.id), who?: Benas|Simas|General, status?: todo|doing|waiting|fixing|done, note? (max 1000)}
+    const id = intId(a);
+    const who = oneOf(str(a, "who", { max: 10 }), ["Benas", "Simas", "General"], "who");
+    const st = oneOf(str(a, "status", { max: 10 }), BOARD_STATUS, "status");
+    const note = str(a, "note", { max: 1000 });
+    if (who === null && st === null && note === null) bad("give at least one of: who, status, note");
+    const c = (await must<any[]>(db.from("tasks").select("id,status,owner,detail,source,source_ref").eq("id", id).limit(1)))[0];
+    if (!c) throw new Bad(404, `no task with id ${id}`);
+    if (!BOARD_SRC.includes(c.source)) bad(`task ${id} is not a founder to-do (source ${c.source}); only ${BOARD_SRC.join(", ")} cards move`);
+    if (c.status === "dropped") bad(`task ${id} was dropped; it is not on the board`);
+    const now = new Date().toISOString(), t: Record<string, unknown> = { updated_at: now };
+    if (st !== null && st !== c.status) { t.status = st; t.done_at = st === "done" ? now : null; }
+    if (who !== null) t.owner = who === "General" ? "Both" : who;
+    if (note !== null) t.detail = addNote(c.detail, actor, note);
+    let mirror: { table: string; id: number; ok: boolean; error?: string } | null = null;
+    const ref = Number(c.source_ref), u: Record<string, unknown> = {};
+    if (c.source === "board" && c.source_ref) {
+      if (st !== null) u.col = st === "waiting" || st === "fixing" ? "doing" : st;   // todo_cards.col has no 'waiting' / 'fixing'
+      if ("owner" in t) u.owner = t.owner;
+      if ("detail" in t) u.detail = t.detail;
+      mirror = { table: "todo_cards", id: ref, ok: false };
+    } else if (c.source === "founder_tasks" && c.source_ref) {
+      if (st !== null && (st === "done") !== (c.status === "done")) u.done_at = t.done_at;
+      if ("owner" in t) u.who = t.owner;
+      if ("detail" in t) u.detail = t.detail;
+      if (Object.keys(u).length) u.updated_at = now;
+      mirror = { table: "founder_tasks", id: ref, ok: false };
+    }
+    if (!Object.keys(u).length) mirror = null;   // e.g. founder_tasks todo -> doing: that table has no status, nothing to copy
+    if (mirror) {
+      try { mirror.ok = (await must<any[]>(db.from(mirror.table).update(u).eq("id", ref).select("id"))).length > 0; if (!mirror.ok) mirror.error = "row not found"; }
+      catch (e) { mirror.error = e instanceof Error ? e.message : String(e); }   // the board's "Saved. The list it came from didn't update."
+    }
+    const rows = await must<any[]>(db.from("tasks").update(t).eq("id", id).select("id,title,owner,status,done_at,detail,source,source_ref,updated_at"));
+    if (!rows.length) throw new Bad(404, `no task with id ${id}`);
+    return { task: rows[0], mirror };
   },
   // ---- touchpoints (11-21): log a call / meeting / email / DM / decision with its next step, right after it happens
   async touch(a, actor, db) {   // {lead, kind, summary, direction?, next_step?, next_at?, status?, scheduled_at?, source?, ref?}
